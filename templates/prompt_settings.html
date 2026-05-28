@@ -1,0 +1,112 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="two-column-layout">
+	<div class="card">
+		<div class="card-header card-header-row">
+			<div>
+				<h3>Шаблоны промтов</h3>
+				<p>Системные инструкции, которые будут передаваться ИИ-модератору.</p>
+			</div>
+
+			<button class="secondary-button" id="refreshPromptsButton">Обновить</button>
+		</div>
+
+		<div id="activePromptCard" class="active-provider-card hidden">
+			<div class="result-label">Активный промт</div>
+			<div class="active-provider-name" id="activePromptName">-</div>
+			<div class="active-provider-meta" id="activePromptMeta">-</div>
+		</div>
+
+		<div id="promptsEmptyState" class="empty-state">
+			<div class="empty-icon">✎</div>
+			<div>Промты пока не настроены</div>
+			<span>Создай первый системный промт через форму справа.</span>
+		</div>
+
+		<div id="promptsList" class="provider-list hidden"></div>
+	</div>
+
+	<div class="card">
+		<div class="card-header">
+			<div>
+				<h3 id="promptFormTitle">Новый промт</h3>
+				<p>Промт должен требовать строгий JSON с verdict, offense_level и description.</p>
+			</div>
+		</div>
+
+		<form id="promptForm" class="form">
+			<input id="promptId" type="hidden">
+
+			<div class="form-row">
+				<label for="promptCode">Код</label>
+				<input id="promptCode" type="text" value="default_moderation_prompt" required>
+			</div>
+
+			<div class="form-row">
+				<label for="promptName">Название</label>
+				<input id="promptName" type="text" value="Базовый промт модерации" required>
+			</div>
+
+			<div class="form-row">
+				<label for="promptVersion">Версия</label>
+				<input id="promptVersion" type="number" min="1" value="1" required>
+			</div>
+
+			<label class="checkbox-row">
+				<input id="promptIsActive" type="checkbox" checked>
+				<span>Сделать активным</span>
+			</label>
+
+			<div class="form-row">
+				<label for="promptText">Текст промта</label>
+				<textarea id="promptText" spellcheck="false">Ты являешься ИИ-модератором переписки.
+
+Твоя задача - оценить только последнее сообщение в контексте предыдущих сообщений.
+
+В последнем сообщении есть триггерное слово или выражение.
+Наличие триггерного слова НЕ означает автоматически нарушение.
+
+Ты должен определить, используется ли это слово или выражение в уничижительном, оскорбительном, травящем, дискриминационном, агрессивном или враждебном контексте.
+
+Важно:
+1. Оценивай не слово само по себе, а смысл последнего сообщения в контексте переписки.
+2. Учитывай, что собеседники могут быть друзьями и могут подшучивать друг над другом.
+3. Учитывай, что слово может использоваться как цитата, самоирония, обсуждение самого слова или нейтральное географическое/историческое/культурное название.
+4. Если слово присутствует, но контекст нейтральный, дружеский или не уничижительный - это не нарушение.
+5. Если сообщение направлено на унижение, травлю, оскорбление или враждебность - это нарушение.
+6. Если контекста недостаточно для уверенного вывода, выбирай мягкую оценку и объясняй сомнение в description.
+
+Верни строго JSON без markdown.
+
+Формат ответа:
+{
+	"verdict": 0 или 1,
+	"offense_level": число от 0 до 10,
+	"description": "короткий вывод на русском языке"
+}
+
+Правила:
+- verdict = 0, если оскорбительного или уничижительного контекста нет.
+- verdict = 1, если оскорбительный или уничижительный контекст есть.
+- offense_level = 0, если контекст полностью нейтральный.
+- offense_level = 1-3, если есть грубость или спорный тон, но явного унижения нет.
+- offense_level = 4-6, если есть оскорбление.
+- offense_level = 7-8, если есть явное унижение, травля или враждебность.
+- offense_level = 9-10, если есть жесткая дегуманизация, угроза, призыв к насилию или сильная ненависть.</textarea>
+			</div>
+
+			<div class="form-actions">
+				<button class="primary-button" type="submit">Сохранить</button>
+				<button class="secondary-button" type="button" id="resetPromptFormButton">Новый</button>
+			</div>
+		</form>
+
+		<div id="promptFormMessage" class="form-message hidden"></div>
+	</div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="/static/js/prompt_settings.js"></script>
+{% endblock %}

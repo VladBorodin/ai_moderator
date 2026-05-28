@@ -55,3 +55,14 @@ def get_ai_provider_settings_page(request: Request) -> HTMLResponse:
 			"active_page": "ai_provider_settings"
 		}
 	)
+
+@router.get("/prompt-settings", response_class=HTMLResponse)
+def get_prompt_settings_page(request: Request) -> HTMLResponse:
+	return templates.TemplateResponse(
+		request=request,
+		name="prompt_settings.html",
+		context={
+			"page_title": "Промты",
+			"active_page": "prompt_settings"
+		}
+	)

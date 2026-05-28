@@ -40,7 +40,14 @@ def create_prompt_template(
 	db: Session = Depends(get_db)
 ) -> PromptTemplateDto:
 	service = PromptTemplateService(db)
-	return service.create(dto)
+
+	try:
+		return service.create(dto)
+	except ValueError as error:
+		raise HTTPException(
+			status_code=409,
+			detail=str(error)
+		) from error
 
 
 @router.put("/{prompt_template_id}", response_model=PromptTemplateDto)
@@ -51,10 +58,16 @@ def update_prompt_template(
 ) -> PromptTemplateDto:
 	service = PromptTemplateService(db)
 
-	prompt_template = service.update(
-		prompt_template_id=prompt_template_id,
-		dto=dto
-	)
+	try:
+		prompt_template = service.update(
+			prompt_template_id=prompt_template_id,
+			dto=dto
+		)
+	except ValueError as error:
+		raise HTTPException(
+			status_code=409,
+			detail=str(error)
+		) from error
 
 	if prompt_template is None:
 		raise HTTPException(

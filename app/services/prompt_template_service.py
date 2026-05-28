@@ -38,6 +38,9 @@ class PromptTemplateService:
 		return self.db.scalars(statement).first()
 
 	def create(self, dto: PromptTemplateCreateDto) -> PromptTemplate:
+		if self.exists_by_code(dto.code):
+			raise ValueError(f"Prompt template with code '{dto.code}' already exists.")
+		
 		if dto.is_active:
 			self._deactivate_all()
 
@@ -67,6 +70,9 @@ class PromptTemplateService:
 
 		if prompt_template.is_deleted:
 			return None
+		
+		if self.exists_by_code(dto.code, exclude_prompt_template_id=prompt_template_id):
+			raise ValueError(f"Prompt template with code '{dto.code}' already exists.")
 
 		if dto.is_active:
 			self._deactivate_all(exclude_prompt_template_id=prompt_template_id)
@@ -135,3 +141,19 @@ class PromptTemplateService:
 
 		for prompt_template in prompt_templates:
 			prompt_template.is_active = False
+			
+	def exists_by_code(
+		self,
+		code: str,
+		exclude_prompt_template_id: UUID | None = None
+	) -> bool:
+		statement = (
+			select(PromptTemplate)
+			.where(PromptTemplate.code == code)
+			.where(PromptTemplate.is_deleted.is_(False))
+		)
+
+		if exclude_prompt_template_id is not None:
+			statement = statement.where(PromptTemplate.id != exclude_prompt_template_id)
+
+		return self.db.scalars(statement).first() is not None

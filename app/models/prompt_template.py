@@ -13,7 +13,7 @@ class PromptTemplate(Base):
 	__tablename__ = "prompt_template"
 
 	id: Mapped[UUID] = mapped_column(PostgresUUID(as_uuid=True), primary_key=True, default=uuid4, index=True)
-	code: Mapped[str] = mapped_column(String(100), unique=True, index=True, nullable=False)
+	code: Mapped[str] = mapped_column(String(100), index=True, nullable=False)
 	name: Mapped[str] = mapped_column(String(200), nullable=False)
 	prompt_text: Mapped[str] = mapped_column(Text, nullable=False)
 	version: Mapped[int] = mapped_column(Integer, default=1, nullable=False)
