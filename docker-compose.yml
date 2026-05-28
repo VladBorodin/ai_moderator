@@ -1,0 +1,16 @@
+services:
+  postgres:
+    image: postgres:16
+    container_name: ai_moderator_postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ai_moderator
+      POSTGRES_USER: ai_moderator_user
+      POSTGRES_PASSWORD: ai_moderator_password
+    ports:
+      - "55432:5432"
+    volumes:
+      - ai_moderator_postgres_data:/var/lib/postgresql/data
+
+volumes:
+  ai_moderator_postgres_data:
