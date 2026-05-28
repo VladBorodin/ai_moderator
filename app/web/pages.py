@@ -44,3 +44,14 @@ def get_moderation_logs_page(request: Request) -> HTMLResponse:
 			"active_page": "moderation_logs"
 		}
 	)
+
+@router.get("/ai-provider-settings", response_class=HTMLResponse)
+def get_ai_provider_settings_page(request: Request) -> HTMLResponse:
+	return templates.TemplateResponse(
+		request=request,
+		name="ai_provider_settings.html",
+		context={
+			"page_title": "Настройки ИИ",
+			"active_page": "ai_provider_settings"
+		}
+	)

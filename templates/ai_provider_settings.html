@@ -1,0 +1,93 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="two-column-layout">
+	<div class="card">
+		<div class="card-header card-header-row">
+			<div>
+				<h3>Провайдеры ИИ</h3>
+				<p>Список локальных или внешних AI endpoint для модерации.</p>
+			</div>
+
+			<button class="secondary-button" id="refreshProvidersButton">Обновить</button>
+		</div>
+
+		<div id="activeProviderCard" class="active-provider-card hidden">
+			<div class="result-label">Активный провайдер</div>
+			<div class="active-provider-name" id="activeProviderName">-</div>
+			<div class="active-provider-meta" id="activeProviderMeta">-</div>
+		</div>
+
+		<div id="providersEmptyState" class="empty-state">
+			<div class="empty-icon">⚙</div>
+			<div>Провайдеры пока не настроены</div>
+			<span>Создай первый AI provider через форму справа.</span>
+		</div>
+
+		<div id="providersList" class="provider-list hidden"></div>
+	</div>
+
+	<div class="card">
+		<div class="card-header">
+			<div>
+				<h3 id="formTitle">Новый провайдер</h3>
+				<p>Настройки подключения к OpenAI-compatible endpoint.</p>
+			</div>
+		</div>
+
+		<form id="aiProviderForm" class="form">
+			<input id="providerId" type="hidden">
+
+			<div class="form-row">
+				<label for="providerName">Название</label>
+				<input id="providerName" type="text" value="Local Ollama" required>
+			</div>
+
+			<div class="form-row">
+				<label for="providerType">Тип провайдера</label>
+				<select id="providerType">
+					<option value="openai_compatible">openai_compatible</option>
+					<option value="ollama_native">ollama_native</option>
+					<option value="custom_http">custom_http</option>
+				</select>
+			</div>
+
+			<div class="form-row">
+				<label for="providerUrl">Provider URL</label>
+				<input id="providerUrl" type="text" value="http://localhost:11434/v1/chat/completions" required>
+			</div>
+
+			<div class="form-row">
+				<label for="modelName">Model name</label>
+				<input id="modelName" type="text" value="llama3.1" required>
+			</div>
+
+			<div class="form-row">
+				<label for="apiKey">API key</label>
+				<input id="apiKey" type="password" placeholder="Оставь пустым, если ключ не нужен">
+			</div>
+
+			<div class="form-row">
+				<label for="timeoutSeconds">Timeout seconds</label>
+				<input id="timeoutSeconds" type="number" min="1" max="600" value="60" required>
+			</div>
+
+			<label class="checkbox-row">
+				<input id="isActive" type="checkbox" checked>
+				<span>Сделать активным</span>
+			</label>
+
+			<div class="form-actions">
+				<button class="primary-button" type="submit">Сохранить</button>
+				<button class="secondary-button" type="button" id="resetProviderFormButton">Новый</button>
+			</div>
+		</form>
+
+		<div id="providerFormMessage" class="form-message hidden"></div>
+	</div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="/static/js/ai_provider_settings.js"></script>
+{% endblock %}
