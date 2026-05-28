@@ -1,9 +1,16 @@
-from typing import Any
+from time import perf_counter
 
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends, HTTPException, Query
+from sqlalchemy.orm import Session
 
-from app.core.config import settings
-from app.services.ai_moderation_service import AiModerationService
+from app.db.session import get_db
+from app.schemas.moderation import (
+	ModerationCheckRequestDto,
+	ModerationCheckResponseDto,
+	ModerationLogDto,
+	ModerationResultDto
+)
+from app.services.moderation_log_service import ModerationLogService
 
 
 router = APIRouter(
@@ -12,19 +19,76 @@ router = APIRouter(
 )
 
 
-@router.post("/check")
-def check_message(request_data: dict[str, Any]) -> dict[str, Any]:
-	moderation_service = AiModerationService(
-		provider_url=settings.ai_provider_url,
-		model_name=settings.ai_model_name,
-		api_key=settings.ai_api_key,
-		timeout_seconds=settings.ai_timeout_seconds
+@router.post("/check", response_model=ModerationCheckResponseDto)
+def check_message(
+	request_data: ModerationCheckRequestDto,
+	db: Session = Depends(get_db)
+) -> ModerationCheckResponseDto:
+	moderation_log_service = ModerationLogService(db)
+
+	request_json = request_data.model_dump(mode="json")
+
+	moderation_log = moderation_log_service.create_log(
+		chat_id=request_data.chat_id,
+		user_id=request_data.user_id,
+		trigger_word=request_data.trigger_word,
+		request_json=request_json
 	)
 
-	result = moderation_service.moderate(request_data)
+	start_time = perf_counter()
 
-	return {
-		"chat_id": request_data.get("chat_id"),
-		"user_id": request_data.get("user_id"),
-		"result": result
-	}
+	try:
+		result = _create_mock_moderation_result()
+
+		processing_time_ms = int((perf_counter() - start_time) * 1000)
+
+		moderation_log_service.complete_log(
+			moderation_log_id=moderation_log.id,
+			response_json=result.model_dump(mode="json"),
+			verdict=result.verdict,
+			offense_level=result.offense_level,
+			description=result.description,
+			processing_time_ms=processing_time_ms
+		)
+
+		return ModerationCheckResponseDto(
+			chat_id=request_data.chat_id,
+			user_id=request_data.user_id,
+			result=result
+		)
+
+	except Exception as error:
+		processing_time_ms = int((perf_counter() - start_time) * 1000)
+
+		moderation_log_service.fail_log(
+			moderation_log_id=moderation_log.id,
+			error_text=str(error),
+			processing_time_ms=processing_time_ms
+		)
+
+		raise HTTPException(
+			status_code=500,
+			detail="Moderation check failed."
+		) from error
+
+
+@router.get("/logs", response_model=list[ModerationLogDto])
+def get_moderation_logs(
+	limit: int = Query(default=50, ge=1, le=200),
+	offset: int = Query(default=0, ge=0),
+	db: Session = Depends(get_db)
+) -> list[ModerationLogDto]:
+	moderation_log_service = ModerationLogService(db)
+
+	return moderation_log_service.get_logs(
+		limit=limit,
+		offset=offset
+	)
+
+
+def _create_mock_moderation_result() -> ModerationResultDto:
+	return ModerationResultDto(
+		verdict=0,
+		offense_level=0,
+		description="Mock moderation result. AI provider is not connected yet."
+	)

@@ -1,6 +1,7 @@
+from datetime import datetime
 from typing import Any
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class ChatMessageDto(BaseModel):
@@ -29,16 +30,20 @@ class ModerationCheckResponseDto(BaseModel):
 
 
 class ModerationLogDto(BaseModel):
+	model_config = ConfigDict(from_attributes=True)
+
 	id: int
 	chat_id: str | None = None
 	user_id: str | None = None
 	trigger_word: str | None = None
+
 	request_json: dict[str, Any]
 	response_json: dict[str, Any] | None = None
+
 	verdict: int | None = None
 	offense_level: int | None = None
 	description: str | None = None
-	error_text: str | None = None
 
-	class Config:
-		from_attributes = True
+	processing_time_ms: int | None = None
+	error_text: str | None = None
+	created_on: datetime
