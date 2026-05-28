@@ -66,3 +66,14 @@ def get_prompt_settings_page(request: Request) -> HTMLResponse:
 			"active_page": "prompt_settings"
 		}
 	)
+
+@router.get("/system-logs", response_class=HTMLResponse)
+def get_system_logs_page(request: Request) -> HTMLResponse:
+	return templates.TemplateResponse(
+		request=request,
+		name="system_logs.html",
+		context={
+			"page_title": "Системные логи",
+			"active_page": "system_logs"
+		}
+	)

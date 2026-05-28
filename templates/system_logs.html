@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="card">
+	<div class="card-header card-header-row">
+		<div>
+			<h3>Системные логи</h3>
+			<p>Просмотр последних строк app.log и error.log.</p>
+		</div>
+
+		<div class="form-actions">
+			<button class="secondary-button" id="refreshSystemLogsButton">Обновить</button>
+			<a class="secondary-button" href="/system-logs/download/app" target="_blank">Скачать app.log</a>
+			<a class="danger-button" href="/system-logs/download/error" target="_blank">Скачать error.log</a>
+		</div>
+	</div>
+
+	<div class="logs-toolbar">
+		<label for="linesCount">Строк:</label>
+		<input id="linesCount" type="number" min="1" max="2000" value="200">
+	</div>
+
+	<div class="logs-grid">
+		<div class="log-panel">
+			<div class="log-panel-header">
+				<span>app.log</span>
+				<span id="appLogLinesCount" class="log-counter">0 lines</span>
+			</div>
+			<pre id="appLogContent" class="log-content"></pre>
+		</div>
+
+		<div class="log-panel">
+			<div class="log-panel-header">
+				<span>error.log</span>
+				<span id="errorLogLinesCount" class="log-counter">0 lines</span>
+			</div>
+			<pre id="errorLogContent" class="log-content error-log"></pre>
+		</div>
+	</div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="/static/js/system_logs.js"></script>
+{% endblock %}

@@ -1,3 +1,5 @@
+import logging
+
 from time import perf_counter
 
 from fastapi import APIRouter, Depends, HTTPException, Query
@@ -12,6 +14,8 @@ from app.schemas.moderation import (
 )
 from app.services.moderation_log_service import ModerationLogService
 
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(
 	prefix="/moderation",
@@ -72,6 +76,8 @@ def check_message(
 			error_text=str(error),
 			processing_time_ms=processing_time_ms
 		)
+
+		logger.exception("Moderation check failed. moderation_log_id=%s", moderation_log.id)
 
 		raise HTTPException(
 			status_code=500,

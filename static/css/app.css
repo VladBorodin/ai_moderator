@@ -831,3 +831,69 @@ select:focus {
 	line-height: 1.55;
 	white-space: pre-wrap;
 }
+
+.logs-toolbar {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	margin-bottom: 18px;
+	color: var(--text-soft);
+	font-weight: 700;
+}
+
+.logs-toolbar input {
+	width: 120px;
+}
+
+.logs-grid {
+	display: grid;
+	grid-template-columns: 1fr 1fr;
+	gap: 18px;
+}
+
+.log-panel {
+	overflow: hidden;
+	border: 1px solid var(--card-border);
+	border-radius: var(--radius-lg);
+	background: rgba(2, 6, 23, 0.34);
+}
+
+.log-panel-header {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	gap: 12px;
+	padding: 14px 16px;
+	border-bottom: 1px solid var(--card-border);
+	color: var(--text);
+	background: rgba(255, 255, 255, 0.05);
+	font-weight: 800;
+}
+
+.log-counter {
+	color: var(--text-muted);
+	font-size: 12px;
+	font-weight: 700;
+}
+
+.log-content {
+	min-height: 520px;
+	max-height: 680px;
+	overflow: auto;
+	padding: 16px;
+	color: #dbeafe;
+	font-family: "Cascadia Code", "Fira Code", Consolas, monospace;
+	font-size: 12px;
+	line-height: 1.6;
+	white-space: pre-wrap;
+}
+
+.log-content.error-log {
+	color: #fecdd3;
+}
+
+@media (max-width: 1100px) {
+	.logs-grid {
+		grid-template-columns: 1fr;
+	}
+}
