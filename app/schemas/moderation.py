@@ -6,7 +6,6 @@ from pydantic import BaseModel, ConfigDict, Field
 
 
 class ChatMessageDto(BaseModel):
-	role: str = Field(default="user")
 	name: str | None = None
 	text: str
 
