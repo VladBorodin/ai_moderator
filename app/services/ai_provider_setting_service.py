@@ -17,6 +17,7 @@ class AiProviderSettingService:
 	def get_all(self) -> list[AiProviderSetting]:
 		statement = (
 			select(AiProviderSetting)
+			.where(AiProviderSetting.is_deleted.is_(False))
 			.order_by(AiProviderSetting.created_on.desc())
 		)
 
@@ -29,6 +30,7 @@ class AiProviderSettingService:
 		statement = (
 			select(AiProviderSetting)
 			.where(AiProviderSetting.is_active.is_(True))
+			.where(AiProviderSetting.is_deleted.is_(False))
 			.order_by(AiProviderSetting.modified_on.desc())
 			.limit(1)
 		)
@@ -100,7 +102,10 @@ class AiProviderSettingService:
 		self,
 		exclude_provider_id: UUID | None = None
 	) -> None:
-		statement = select(AiProviderSetting)
+		statement = (
+			select(AiProviderSetting)
+			.where(AiProviderSetting.is_deleted.is_(False))
+		)
 
 		if exclude_provider_id is not None:
 			statement = statement.where(AiProviderSetting.id != exclude_provider_id)
@@ -109,3 +114,19 @@ class AiProviderSettingService:
 
 		for provider in providers:
 			provider.is_active = False
+
+	def delete(self, provider_id: UUID) -> bool:
+		provider = self.get_by_id(provider_id)
+
+		if provider is None:
+			return False
+
+		if provider.is_active:
+			raise ValueError("Active AI provider cannot be deleted.")
+
+		provider.is_deleted = True
+		provider.is_active = False
+
+		self.db.commit()
+
+		return True

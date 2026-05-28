@@ -84,9 +84,10 @@ function renderProviders(providers) {
 			</div>
 
 			<div class="provider-actions">
-				<button class="secondary-button" type="button" data-action="edit" data-provider-id="${provider.id}">Редактировать</button>
-				<button class="secondary-button" type="button" data-action="activate" data-provider-id="${provider.id}" ${provider.is_active ? "disabled" : ""}>Сделать активным</button>
-			</div>
+                <button class="secondary-button" type="button" data-action="edit" data-provider-id="${provider.id}">Редактировать</button>
+                <button class="secondary-button" type="button" data-action="activate" data-provider-id="${provider.id}" ${provider.is_active ? "disabled" : ""}>Сделать активным</button>
+                <button class="danger-button" type="button" data-action="delete" data-provider-id="${provider.id}" ${provider.is_active ? "disabled" : ""}>Удалить</button>
+            </div>
 		`;
 
 		card.querySelector('[data-action="edit"]').addEventListener("click", () => {
@@ -100,6 +101,14 @@ function renderProviders(providers) {
 				activateProvider(provider.id);
 			});
 		}
+
+        const deleteButton = card.querySelector('[data-action="delete"]');
+
+        if (deleteButton) {
+            deleteButton.addEventListener("click", () => {
+                deleteProvider(provider.id, provider.name);
+            });
+        }
 
 		providersList.appendChild(card);
 	}
@@ -235,4 +244,26 @@ function escapeHtml(value) {
 		.replaceAll(">", "&gt;")
 		.replaceAll('"', "&quot;")
 		.replaceAll("'", "&#039;");
+}
+
+async function deleteProvider(id, name) {
+	clearFormMessage();
+
+	try {
+		const response = await fetch(`/settings/ai-providers/${id}`, {
+			method: "DELETE"
+		});
+
+		if (!response.ok) {
+			const responseBody = await response.json();
+			showFormMessage(`Ошибка удаления: ${JSON.stringify(responseBody)}`, true);
+			return;
+		}
+
+		showFormMessage("Провайдер удален.", false);
+		resetProviderForm();
+		await loadProviders();
+	} catch (error) {
+		showFormMessage(`Ошибка запроса: ${error}`, true);
+	}
 }

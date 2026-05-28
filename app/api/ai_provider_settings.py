@@ -81,3 +81,28 @@ def activate_ai_provider(
 		)
 
 	return provider
+
+@router.delete("/{provider_id}")
+def delete_ai_provider(
+	provider_id: UUID,
+	db: Session = Depends(get_db)
+) -> dict[str, bool]:
+	service = AiProviderSettingService(db)
+
+	try:
+		is_deleted = service.delete(provider_id)
+	except ValueError as error:
+		raise HTTPException(
+			status_code=400,
+			detail=str(error)
+		) from error
+
+	if not is_deleted:
+		raise HTTPException(
+			status_code=404,
+			detail="AI provider setting was not found."
+		)
+
+	return {
+		"deleted": True
+	}
