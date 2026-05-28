@@ -1,0 +1,95 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="two-column-layout">
+	<div class="card">
+		<div class="card-header">
+			<div>
+				<h3>Ручная проверка</h3>
+				<p>Отправь тестовый фрагмент переписки в `/moderation/check`.</p>
+			</div>
+		</div>
+
+		<form id="moderationForm" class="form">
+			<div class="form-row">
+				<label for="chatId">Chat ID</label>
+				<input id="chatId" name="chatId" type="text" value="test_chat">
+			</div>
+
+			<div class="form-row">
+				<label for="userId">User ID</label>
+				<input id="userId" name="userId" type="text" value="user_1">
+			</div>
+
+			<div class="form-row">
+				<label for="triggerWord">Триггерное слово</label>
+				<input id="triggerWord" name="triggerWord" type="text" value="сукин сын">
+			</div>
+
+			<div class="form-row">
+				<label for="messagesJson">Messages JSON</label>
+				<textarea id="messagesJson" name="messagesJson" spellcheck="false">[
+	{
+		"role": "user",
+		"name": "Петр",
+		"text": "И мне выпал тот самый билет, и я победил!"
+	},
+	{
+		"role": "user",
+		"name": "Сергей",
+		"text": "Ну ты удачливый сукин сын!"
+	}
+]</textarea>
+			</div>
+
+			<div class="form-actions">
+				<button class="primary-button" type="submit">Проверить</button>
+				<button class="secondary-button" type="button" id="resetExampleButton">Вернуть пример</button>
+			</div>
+		</form>
+	</div>
+
+	<div class="card result-card">
+		<div class="card-header">
+			<div>
+				<h3>Результат</h3>
+				<p>Ответ backend-сервиса будет показан здесь.</p>
+			</div>
+		</div>
+
+		<div id="resultEmptyState" class="empty-state">
+			<div class="empty-icon">◇</div>
+			<div>Пока проверок нет</div>
+			<span>Заполни форму и нажми “Проверить”.</span>
+		</div>
+
+		<div id="resultPanel" class="result-panel hidden">
+			<div class="result-summary">
+				<div>
+					<div class="result-label">Verdict</div>
+					<div id="resultVerdict" class="badge">-</div>
+				</div>
+
+				<div>
+					<div class="result-label">Offense level</div>
+					<div id="resultLevel" class="level-pill">-</div>
+				</div>
+			</div>
+
+			<div class="description-box">
+				<div class="result-label">Description</div>
+				<p id="resultDescription"></p>
+			</div>
+
+			<div class="json-box">
+				<div class="result-label">Raw response</div>
+				<pre id="resultJson"></pre>
+			</div>
+		</div>
+	</div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="/static/js/moderation_test.js"></script>
+{% endblock %}

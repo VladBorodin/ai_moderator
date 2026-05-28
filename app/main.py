@@ -1,10 +1,12 @@
-from contextlib import asynccontextmanager
 from collections.abc import AsyncGenerator
+from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
+from fastapi.staticfiles import StaticFiles
 
 from app.api.moderation import router as moderation_router
 from app.db.init_db import init_db
+from app.web.pages import router as pages_router
 
 
 @asynccontextmanager
@@ -20,6 +22,13 @@ app = FastAPI(
 )
 
 
+app.mount(
+	"/static",
+	StaticFiles(directory="static"),
+	name="static"
+)
+
+app.include_router(pages_router)
 app.include_router(moderation_router)
 
 

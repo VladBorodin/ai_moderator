@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="ru">
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+
+	<title>{{ page_title }} - AI Moderator</title>
+
+	<link rel="stylesheet" href="/static/css/app.css">
+</head>
+<body>
+	<div class="app-shell">
+		<aside class="sidebar">
+			<div class="brand">
+				<div class="brand-logo">AI</div>
+				<div>
+					<div class="brand-title">AI Moderator</div>
+					<div class="brand-subtitle">Admin Console</div>
+				</div>
+			</div>
+
+			<nav class="nav">
+				<a class="nav-link {% if active_page == 'dashboard' %}active{% endif %}" href="/">
+					<span class="nav-icon">⌂</span>
+					<span>Dashboard</span>
+				</a>
+
+				<a class="nav-link {% if active_page == 'moderation_test' %}active{% endif %}" href="/moderation-test">
+					<span class="nav-icon">◇</span>
+					<span>Проверка сообщения</span>
+				</a>
+
+				<a class="nav-link {% if active_page == 'moderation_logs' %}active{% endif %}" href="/moderation-logs">
+					<span class="nav-icon">☷</span>
+					<span>Журнал проверок</span>
+				</a>
+
+				<a class="nav-link disabled" href="#">
+					<span class="nav-icon">⚙</span>
+					<span>Настройки ИИ</span>
+				</a>
+
+				<a class="nav-link disabled" href="#">
+					<span class="nav-icon">✎</span>
+					<span>Промты</span>
+				</a>
+
+				<a class="nav-link disabled" href="#">
+					<span class="nav-icon">!</span>
+					<span>Триггеры</span>
+				</a>
+			</nav>
+
+			<div class="sidebar-footer">
+				<div class="status-dot"></div>
+				<span>Local admin mode</span>
+			</div>
+		</aside>
+
+		<main class="main">
+			<header class="topbar">
+				<div>
+					<h1>{{ page_title }}</h1>
+					<p class="topbar-subtitle">Панель управления сервисом контекстной модерации</p>
+				</div>
+
+				<div class="topbar-actions">
+					<a class="ghost-button" href="/docs" target="_blank">Swagger</a>
+					<a class="ghost-button" href="/health" target="_blank">Health</a>
+				</div>
+			</header>
+
+			<section class="content">
+				{% block content %}{% endblock %}
+			</section>
+		</main>
+	</div>
+
+	{% block scripts %}{% endblock %}
+</body>
+</html>

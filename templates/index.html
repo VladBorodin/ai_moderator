@@ -1,0 +1,80 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="dashboard-grid">
+	<div class="hero-card">
+		<div class="eyebrow">AI Moderator</div>
+		<h2>Контекстная модерация без банов по словарю</h2>
+		<p>
+			Приложение-прокладка принимает JSON с фрагментом переписки,
+			оценивает последнее сообщение и сохраняет результат проверки в PostgreSQL.
+		</p>
+
+		<div class="hero-actions">
+			<a class="primary-button" href="/moderation-test">Проверить сообщение</a>
+			<a class="secondary-button" href="/moderation-logs">Открыть журнал</a>
+		</div>
+	</div>
+
+	<div class="metric-card">
+		<div class="metric-label">Backend</div>
+		<div class="metric-value">FastAPI</div>
+		<div class="metric-text">API и административный UI в одном приложении.</div>
+	</div>
+
+	<div class="metric-card">
+		<div class="metric-label">Database</div>
+		<div class="metric-value">PostgreSQL</div>
+		<div class="metric-text">Журнал проверок и будущие системные настройки.</div>
+	</div>
+
+	<div class="metric-card">
+		<div class="metric-label">AI Provider</div>
+		<div class="metric-value muted">Mock</div>
+		<div class="metric-text">Реальный ИИ будет подключен после UI и настроек.</div>
+	</div>
+</div>
+
+<div class="card">
+	<div class="card-header">
+		<div>
+			<h3>Ближайший план</h3>
+			<p>Текущая дорожная карта разработки.</p>
+		</div>
+	</div>
+
+	<div class="timeline">
+		<div class="timeline-item done">
+			<div class="timeline-dot"></div>
+			<div>
+				<strong>Базовый backend</strong>
+				<span>FastAPI, PostgreSQL, модели, DTO, журналирование.</span>
+			</div>
+		</div>
+
+		<div class="timeline-item active">
+			<div class="timeline-dot"></div>
+			<div>
+				<strong>Административный UI</strong>
+				<span>Ручной тест модерации и просмотр журнала.</span>
+			</div>
+		</div>
+
+		<div class="timeline-item">
+			<div class="timeline-dot"></div>
+			<div>
+				<strong>Настройки ИИ</strong>
+				<span>Провайдеры, модели, URL, таймауты.</span>
+			</div>
+		</div>
+
+		<div class="timeline-item">
+			<div class="timeline-dot"></div>
+			<div>
+				<strong>Реальный ИИ</strong>
+				<span>Подключение локальной модели или внешнего API.</span>
+			</div>
+		</div>
+	</div>
+</div>
+{% endblock %}
