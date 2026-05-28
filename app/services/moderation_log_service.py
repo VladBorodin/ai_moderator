@@ -1,3 +1,5 @@
+from uuid import UUID
+
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
@@ -30,7 +32,7 @@ class ModerationLogService:
 
 	def complete_log(
 		self,
-		moderation_log_id: int,
+		moderation_log_id: UUID,
 		response_json: dict,
 		verdict: int,
 		offense_level: int,
@@ -56,7 +58,7 @@ class ModerationLogService:
 
 	def fail_log(
 		self,
-		moderation_log_id: int,
+		moderation_log_id: UUID,
 		error_text: str,
 		processing_time_ms: int | None = None
 	) -> ModerationLog:

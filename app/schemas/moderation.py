@@ -1,5 +1,6 @@
 from datetime import datetime
 from typing import Any
+from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -32,7 +33,7 @@ class ModerationCheckResponseDto(BaseModel):
 class ModerationLogDto(BaseModel):
 	model_config = ConfigDict(from_attributes=True)
 
-	id: int
+	id: UUID
 	chat_id: str | None = None
 	user_id: str | None = None
 	trigger_word: str | None = None
