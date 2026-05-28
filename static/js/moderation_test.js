@@ -1,11 +1,9 @@
 const defaultMessagesJson = `[
 	{
-		"role": "user",
 		"name": "Петр",
 		"text": "И мне выпал тот самый билет, и я победил!"
 	},
 	{
-		"role": "user",
 		"name": "Сергей",
 		"text": "Ну ты удачливый сукин сын!"
 	}
@@ -24,7 +22,6 @@ const resultJson = document.getElementById("resultJson");
 resetExampleButton.addEventListener("click", () => {
 	document.getElementById("chatId").value = "test_chat";
 	document.getElementById("userId").value = "user_1";
-	document.getElementById("triggerWord").value = "сукин сын";
 	document.getElementById("messagesJson").value = defaultMessagesJson;
 });
 
@@ -43,12 +40,14 @@ moderationForm.addEventListener("submit", async (event) => {
 	}
 
 	const requestBody = {
-		chat_id: document.getElementById("chatId").value || null,
-		user_id: document.getElementById("userId").value || null,
-		trigger_word: document.getElementById("triggerWord").value || null,
-		messages: messages
-	};
-
+        source_system: document.getElementById("sourceSystem").value || null,
+        chat_id: document.getElementById("chatId").value || null,
+        user_id: document.getElementById("userId").value || null,
+        user_name: document.getElementById("userName").value || null,
+        external_message_id: document.getElementById("externalMessageId").value || null,
+        messages: messages
+    };
+    
 	try {
 		const response = await fetch("/moderation/check", {
 			method: "POST",

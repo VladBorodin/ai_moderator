@@ -12,9 +12,11 @@ class ChatMessageDto(BaseModel):
 
 
 class ModerationCheckRequestDto(BaseModel):
+	source_system: str | None = None
 	chat_id: str | None = None
 	user_id: str | None = None
-	trigger_word: str | None = None
+	user_name: str | None = None
+	external_message_id: str | None = None
 	messages: list[ChatMessageDto]
 
 
@@ -34,9 +36,14 @@ class ModerationLogDto(BaseModel):
 	model_config = ConfigDict(from_attributes=True)
 
 	id: UUID
+
+	source_system: str | None = None
 	chat_id: str | None = None
 	user_id: str | None = None
-	trigger_word: str | None = None
+	user_name: str | None = None
+	external_message_id: str | None = None
+
+	last_message_text: str | None = None
 
 	request_json: dict[str, Any]
 	response_json: dict[str, Any] | None = None

@@ -13,14 +13,20 @@ class ModerationLogService:
 	def create_log(
 		self,
 		request_json: dict,
+		source_system: str | None = None,
 		chat_id: str | None = None,
 		user_id: str | None = None,
-		trigger_word: str | None = None
+		user_name: str | None = None,
+		external_message_id: str | None = None,
+		last_message_text: str | None = None
 	) -> ModerationLog:
 		moderation_log = ModerationLog(
+			source_system=source_system,
 			chat_id=chat_id,
 			user_id=user_id,
-			trigger_word=trigger_word,
+			user_name=user_name,
+			external_message_id=external_message_id,
+			last_message_text=last_message_text,
 			request_json=request_json
 		)
 

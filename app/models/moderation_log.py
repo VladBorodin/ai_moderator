@@ -14,10 +14,13 @@ class ModerationLog(Base):
 
 	id: Mapped[UUID] = mapped_column(PostgresUUID(as_uuid=True), primary_key=True, default=uuid4, index=True)
 
+	source_system: Mapped[str | None] = mapped_column(String(100), index=True, nullable=True)
 	chat_id: Mapped[str | None] = mapped_column(String(100), index=True, nullable=True)
 	user_id: Mapped[str | None] = mapped_column(String(100), index=True, nullable=True)
+	user_name: Mapped[str | None] = mapped_column(String(200), nullable=True)
+	external_message_id: Mapped[str | None] = mapped_column(String(200), index=True, nullable=True)
 
-	trigger_word: Mapped[str | None] = mapped_column(String(200), nullable=True)
+	last_message_text: Mapped[str | None] = mapped_column(Text, nullable=True)
 
 	request_json: Mapped[dict] = mapped_column(JSONB, nullable=False)
 	response_json: Mapped[dict | None] = mapped_column(JSONB, nullable=True)

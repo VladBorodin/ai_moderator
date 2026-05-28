@@ -42,9 +42,10 @@ function renderLogs(logs) {
 		row.innerHTML = `
 			<td>${escapeHtml(log.id)}</td>
 			<td>${escapeHtml(formatDate(log.created_on))}</td>
+			<td>${escapeHtml(log.source_system ?? "-")}</td>
 			<td>${escapeHtml(log.chat_id ?? "-")}</td>
-			<td>${escapeHtml(log.user_id ?? "-")}</td>
-			<td>${escapeHtml(log.trigger_word ?? "-")}</td>
+			<td>${escapeHtml(log.user_name ?? log.user_id ?? "-")}</td>
+			<td class="description-cell">${escapeHtml(log.last_message_text ?? "-")}</td>
 			<td><span class="${verdictClass}">${verdictText}</span></td>
 			<td><span class="level-pill">${escapeHtml(log.offense_level ?? "-")}</span></td>
 			<td class="description-cell">${escapeHtml(log.description ?? log.error_text ?? "-")}</td>
