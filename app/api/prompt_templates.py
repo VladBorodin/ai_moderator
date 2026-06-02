@@ -1,3 +1,5 @@
+import logging
+
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException
@@ -17,6 +19,7 @@ router = APIRouter(
 	tags=["Prompt Templates"]
 )
 
+logger = logging.getLogger(__name__)
 
 @router.get("", response_model=list[PromptTemplateDto])
 def get_prompt_templates(
@@ -44,6 +47,12 @@ def create_prompt_template(
 	try:
 		return service.create(dto)
 	except ValueError as error:
+		logger.warning(
+			"Prompt template creation rejected. reason=%s code=%s",
+			str(error),
+			dto.code
+		)
+
 		raise HTTPException(
 			status_code=409,
 			detail=str(error)
@@ -64,6 +73,13 @@ def update_prompt_template(
 			dto=dto
 		)
 	except ValueError as error:
+		logger.warning(
+			"Prompt template update rejected. prompt_template_id=%s reason=%s code=%s",
+			prompt_template_id,
+			str(error),
+			dto.code
+		)
+
 		raise HTTPException(
 			status_code=409,
 			detail=str(error)

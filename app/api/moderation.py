@@ -1,5 +1,4 @@
 import logging
-
 from time import perf_counter
 
 from fastapi import APIRouter, Depends, HTTPException, Query
@@ -9,13 +8,16 @@ from app.db.session import get_db
 from app.schemas.moderation import (
 	ModerationCheckRequestDto,
 	ModerationCheckResponseDto,
-	ModerationLogDto,
-	ModerationResultDto
+	ModerationLogDto
 )
+from app.services.ai_moderation_service import AiModerationService, AiModerationError
+from app.services.ai_provider_setting_service import AiProviderSettingService
 from app.services.moderation_log_service import ModerationLogService
+from app.services.prompt_template_service import PromptTemplateService
 
 
 logger = logging.getLogger(__name__)
+
 
 router = APIRouter(
 	prefix="/moderation",
@@ -31,7 +33,6 @@ def check_message(
 	moderation_log_service = ModerationLogService(db)
 
 	request_json = request_data.model_dump(mode="json")
-
 	last_message_text = _get_last_message_text(request_data)
 	last_message_name = _get_last_message_name(request_data)
 	user_name = request_data.user_name or last_message_name
@@ -49,7 +50,26 @@ def check_message(
 	start_time = perf_counter()
 
 	try:
-		result = _create_mock_moderation_result()
+		ai_provider_setting_service = AiProviderSettingService(db)
+		prompt_template_service = PromptTemplateService(db)
+
+		active_provider = ai_provider_setting_service.get_active()
+
+		if active_provider is None:
+			raise RuntimeError("Active AI provider is not configured.")
+
+		active_prompt_template = prompt_template_service.get_active()
+
+		if active_prompt_template is None:
+			raise RuntimeError("Active prompt template is not configured.")
+
+		ai_moderation_service = AiModerationService()
+
+		result = ai_moderation_service.moderate(
+			request_data=request_data,
+			provider=active_provider,
+			prompt_template=active_prompt_template
+		)
 
 		processing_time_ms = int((perf_counter() - start_time) * 1000)
 
@@ -68,6 +88,25 @@ def check_message(
 			result=result
 		)
 
+	except AiModerationError as error:
+		processing_time_ms = int((perf_counter() - start_time) * 1000)
+
+		moderation_log_service.fail_log(
+			moderation_log_id=moderation_log.id,
+			error_text=str(error),
+			processing_time_ms=processing_time_ms
+		)
+
+		logger.exception(
+			"AI moderation failed. moderation_log_id=%s",
+			moderation_log.id
+		)
+
+		raise HTTPException(
+			status_code=502,
+			detail=str(error)
+		) from error
+
 	except Exception as error:
 		processing_time_ms = int((perf_counter() - start_time) * 1000)
 
@@ -77,11 +116,14 @@ def check_message(
 			processing_time_ms=processing_time_ms
 		)
 
-		logger.exception("Moderation check failed. moderation_log_id=%s", moderation_log.id)
+		logger.exception(
+			"Moderation check failed. moderation_log_id=%s",
+			moderation_log.id
+		)
 
 		raise HTTPException(
 			status_code=500,
-			detail="Moderation check failed."
+			detail=str(error)
 		) from error
 
 
@@ -99,20 +141,18 @@ def get_moderation_logs(
 	)
 
 
-def _create_mock_moderation_result() -> ModerationResultDto:
-	return ModerationResultDto(
-		verdict=0,
-		offense_level=0,
-		description="Mock moderation result. AI provider is not connected yet."
-	)
-
-def _get_last_message_text(request_data: ModerationCheckRequestDto) -> str | None:
+def _get_last_message_text(
+	request_data: ModerationCheckRequestDto
+) -> str | None:
 	if not request_data.messages:
 		return None
 
 	return request_data.messages[-1].text
 
-def _get_last_message_name(request_data: ModerationCheckRequestDto) -> str | None:
+
+def _get_last_message_name(
+	request_data: ModerationCheckRequestDto
+) -> str | None:
 	if not request_data.messages:
 		return None
 

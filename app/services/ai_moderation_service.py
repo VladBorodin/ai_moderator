@@ -1,39 +1,49 @@
 import json
-from typing import Any
+import logging
+import re
 
 import requests
+from pydantic import ValidationError
+
+from app.models.ai_provider_setting import AiProviderSetting
+from app.models.prompt_template import PromptTemplate
+from app.schemas.moderation import ModerationCheckRequestDto, ModerationResultDto
+
+
+logger = logging.getLogger(__name__)
+
+
+class AiModerationError(Exception):
+	pass
+
+
+class AiProviderRequestError(AiModerationError):
+	pass
+
+
+class AiResponseParseError(AiModerationError):
+	pass
+
+
+class AiResponseValidationError(AiModerationError):
+	pass
 
 
 class AiModerationService:
-	def __init__(
+	def moderate(
 		self,
-		provider_url: str,
-		model_name: str,
-		api_key: str | None,
-		timeout_seconds: int
-	) -> None:
-		self.provider_url = provider_url
-		self.model_name = model_name
-		self.api_key = api_key
-		self.timeout_seconds = timeout_seconds
-
-	def moderate(self, request_data: dict[str, Any]) -> dict[str, Any]:
-		system_prompt = self._build_system_prompt()
+		request_data: ModerationCheckRequestDto,
+		provider: AiProviderSetting,
+		prompt_template: PromptTemplate
+	) -> ModerationResultDto:
 		user_prompt = self._build_user_prompt(request_data)
 
-		headers = {
-			"Content-Type": "application/json"
-		}
-
-		if self.api_key:
-			headers["Authorization"] = f"Bearer {self.api_key}"
-
 		payload = {
-			"model": self.model_name,
+			"model": provider.model_name,
 			"messages": [
 				{
 					"role": "system",
-					"content": system_prompt
+					"content": prompt_template.prompt_text
 				},
 				{
 					"role": "user",
@@ -43,112 +53,137 @@ class AiModerationService:
 			"temperature": 0.1
 		}
 
-		response = requests.post(
-			self.provider_url,
-			headers=headers,
-			json=payload,
-			timeout=self.timeout_seconds
-		)
+		headers = {
+			"Content-Type": "application/json"
+		}
 
-		response.raise_for_status()
+		if provider.api_key:
+			headers["Authorization"] = f"Bearer {provider.api_key}"
+
+		try:
+			response = requests.post(
+				provider.provider_url,
+				headers=headers,
+				json=payload,
+				timeout=provider.timeout_seconds
+			)
+
+			response.raise_for_status()
+		except requests.exceptions.Timeout as error:
+			logger.exception(
+				"AI provider request timeout. provider_id=%s provider_url=%s timeout_seconds=%s",
+				provider.id,
+				provider.provider_url,
+				provider.timeout_seconds
+			)
+
+			raise AiProviderRequestError("AI provider request timeout.") from error
+		except requests.exceptions.RequestException as error:
+			logger.exception(
+				"AI provider request failed. provider_id=%s provider_url=%s",
+				provider.id,
+				provider.provider_url
+			)
+
+			raise AiProviderRequestError("AI provider request failed.") from error
 
 		response_json = response.json()
-		answer_text = response_json["choices"][0]["message"]["content"]
+		answer_text = self._extract_answer_text(response_json)
 
-		return self._parse_answer(answer_text)
+		return self._parse_moderation_result(answer_text)
 
-	def _build_user_prompt(self, request_data: dict[str, Any]) -> str:
-		trigger_word = request_data.get("trigger_word", "")
-		messages = request_data.get("messages", [])
-
+	def _build_user_prompt(
+		self,
+		request_data: ModerationCheckRequestDto
+	) -> str:
 		message_lines: list[str] = []
 
-		for message_index, message in enumerate(messages, start=1):
-			author_name = message.get("name", "Неизвестный")
-			message_text = message.get("text", "")
-			message_lines.append(f'{message_index}. {author_name}: "{message_text}"')
+		for message_index, message in enumerate(request_data.messages, start=1):
+			if message.name:
+				message_lines.append(f'{message_index}. {message.name}: "{message.text}"')
+			else:
+				message_lines.append(f'{message_index}. "{message.text}"')
 
 		messages_text = "\n".join(message_lines)
 
 		return f"""
-Проанализируй переписку.
-
-Триггерное слово:
-"{trigger_word}"
+Проанализируй фрагмент переписки.
 
 Сообщения:
 {messages_text}
 
-Оцени только последнее сообщение с учетом контекста.
+Оцени только последнее сообщение с учетом контекста предыдущих сообщений.
+
 Верни результат строго в JSON.
 """.strip()
 
-	def _parse_answer(self, answer_text: str) -> dict[str, Any]:
+	def _extract_answer_text(
+		self,
+		response_json: dict
+	) -> str:
 		try:
-			model_result = json.loads(answer_text)
-		except json.JSONDecodeError:
-			return self._create_fallback_result("Модель вернула невалидный JSON.")
+			answer_text = response_json["choices"][0]["message"]["content"]
+		except (KeyError, IndexError, TypeError) as error:
+			logger.error(
+				"AI provider returned unexpected response structure. response_json=%s",
+				response_json
+			)
 
-		verdict = model_result.get("verdict")
-		offense_level = model_result.get("offense_level")
-		description = model_result.get("description")
+			raise AiResponseParseError("AI provider returned unexpected response structure.") from error
 
-		if verdict not in [0, 1]:
-			return self._create_fallback_result("Модель вернула некорректное значение verdict.")
+		if not isinstance(answer_text, str) or not answer_text.strip():
+			raise AiResponseParseError("AI provider returned empty answer.")
 
-		if not isinstance(offense_level, int) or offense_level < 0 or offense_level > 10:
-			return self._create_fallback_result("Модель вернула некорректное значение offense_level.")
+		return answer_text.strip()
 
-		if not isinstance(description, str) or not description.strip():
-			return self._create_fallback_result("Модель вернула пустое описание.")
+	def _parse_moderation_result(
+		self,
+		answer_text: str
+	) -> ModerationResultDto:
+		clean_answer_text = self._extract_json_text(answer_text)
 
-		return {
-			"verdict": verdict,
-			"offense_level": offense_level,
-			"description": description.strip()
-		}
+		try:
+			answer_json = json.loads(clean_answer_text)
+		except json.JSONDecodeError as error:
+			logger.error(
+				"AI provider returned invalid JSON. answer_text=%s",
+				answer_text
+			)
 
-	def _create_fallback_result(self, description: str) -> dict[str, Any]:
-		return {
-			"verdict": 1,
-			"offense_level": 5,
-			"description": f"Требуется ручная проверка. Причина: {description}"
-		}
+			raise AiResponseParseError("AI provider returned invalid JSON.") from error
 
-	def _build_system_prompt(self) -> str:
-		return """
-Ты являешься ИИ-модератором переписки.
+		try:
+			return ModerationResultDto.model_validate(answer_json)
+		except ValidationError as error:
+			logger.error(
+				"AI provider returned JSON with invalid moderation schema. answer_json=%s",
+				answer_json
+			)
 
-Твоя задача - оценить только последнее сообщение в контексте предыдущих сообщений.
+			raise AiResponseValidationError("AI provider returned invalid moderation schema.") from error
 
-В последнем сообщении есть триггерное слово или выражение.
-Наличие триггерного слова НЕ означает автоматически нарушение.
+	def _extract_json_text(
+		self,
+		answer_text: str
+	) -> str:
+		clean_text = answer_text.strip()
 
-Ты должен определить, используется ли это слово или выражение в уничижительном, оскорбительном, травящем, дискриминационном, агрессивном или враждебном контексте.
+		fenced_json_match = re.search(
+			r"```(?:json)?\s*(.*?)\s*```",
+			clean_text,
+			re.DOTALL | re.IGNORECASE
+		)
 
-Важно:
-1. Оценивай не слово само по себе, а смысл последнего сообщения в контексте переписки.
-2. Учитывай, что собеседники могут быть друзьями и могут подшучивать друг над другом.
-3. Учитывай, что слово может использоваться как цитата, самоирония, обсуждение самого слова или нейтральное географическое/историческое/культурное название.
-4. Если слово присутствует, но контекст нейтральный, дружеский или не уничижительный - это не нарушение.
-5. Если сообщение направлено на унижение, травлю, оскорбление или враждебность - это нарушение.
-6. Если контекста недостаточно для уверенного вывода, выбирай мягкую оценку и объясняй сомнение в description.
+		if fenced_json_match:
+			return fenced_json_match.group(1).strip()
 
-Верни строго JSON без markdown.
+		json_object_match = re.search(
+			r"\{.*\}",
+			clean_text,
+			re.DOTALL
+		)
 
-Формат ответа:
-{
-	"verdict": 0 или 1,
-	"offense_level": число от 0 до 10,
-	"description": "короткий вывод на русском языке"
-}
+		if json_object_match:
+			return json_object_match.group(0).strip()
 
-Правила:
-- verdict = 0, если оскорбительного или уничижительного контекста нет.
-- verdict = 1, если оскорбительный или уничижительный контекст есть.
-- offense_level = 0, если контекст полностью нейтральный.
-- offense_level = 1-3, если есть грубость или спорный тон, но явного унижения нет.
-- offense_level = 4-6, если есть оскорбление.
-- offense_level = 7-8, если есть явное унижение, травля или враждебность.
-- offense_level = 9-10, если есть жесткая дегуманизация, угроза, призыв к насилию или сильная ненависть.
-""".strip()
+		return clean_text
