@@ -3,9 +3,10 @@ from uuid import UUID
 from datetime import UTC, datetime, timedelta
 from sqlalchemy import select, delete
 from sqlalchemy.orm import Session
+from uuid import UUID
 
 from app.models.moderation_log import ModerationLog
-
+from sqlalchemy import delete, select
 
 class ModerationLogService:
 	def __init__(self, db: Session) -> None:
@@ -113,3 +114,14 @@ class ModerationLogService:
 		self.db.commit()
 
 		return int(result.rowcount or 0)
+	
+	def get_by_id(
+		self,
+		moderation_log_id: UUID
+	) -> ModerationLog | None:
+		statement = (
+			select(ModerationLog)
+			.where(ModerationLog.id == moderation_log_id)
+		)
+
+		return self.db.scalars(statement).first()
