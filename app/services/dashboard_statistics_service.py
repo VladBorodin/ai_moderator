@@ -286,3 +286,125 @@ class DashboardStatisticsService:
 			"failed_checks": failed_checks,
 			"error_rate": error_rate
 		}
+	
+	def get_day_statistics(
+		self,
+		date_text: str
+	) -> dict[str, Any]:
+		target_date = datetime.strptime(date_text, "%Y-%m-%d").date()
+
+		start_datetime = datetime.combine(
+			target_date,
+			datetime.min.time(),
+			tzinfo=UTC
+		)
+
+		end_datetime = start_datetime + timedelta(days=1)
+
+		statement = select(
+			func.count(ModerationLog.id).label("total_checks"),
+			func.sum(
+				case(
+					(ModerationLog.verdict == 1, 1),
+					else_=0
+				)
+			).label("offensive_checks"),
+			func.sum(
+				case(
+					(ModerationLog.verdict == 0, 1),
+					else_=0
+				)
+			).label("non_offensive_checks"),
+			func.sum(
+				case(
+					(ModerationLog.error_text.is_not(None), 1),
+					else_=0
+				)
+			).label("failed_checks"),
+			func.avg(ModerationLog.processing_time_ms).label("average_processing_time_ms")
+		).where(
+			ModerationLog.created_on >= start_datetime,
+			ModerationLog.created_on < end_datetime
+		)
+
+		result = self.db.execute(statement).one()
+
+		total_checks = int(result.total_checks or 0)
+		offensive_checks = int(result.offensive_checks or 0)
+		non_offensive_checks = int(result.non_offensive_checks or 0)
+		failed_checks = int(result.failed_checks or 0)
+
+		return {
+			"date": date_text,
+			"summary": {
+				"total_checks": total_checks,
+				"offensive_checks": offensive_checks,
+				"non_offensive_checks": non_offensive_checks,
+				"failed_checks": failed_checks,
+				"average_processing_time_ms": round(float(result.average_processing_time_ms), 2)
+				if result.average_processing_time_ms is not None
+				else None
+			},
+			"percentages": self._build_day_percentages(
+				total_checks=total_checks,
+				offensive_checks=offensive_checks,
+				non_offensive_checks=non_offensive_checks,
+				failed_checks=failed_checks
+			),
+			"offense_level_distribution": self._get_offense_level_distribution_by_period(
+				start_datetime=start_datetime,
+				end_datetime=end_datetime
+			)
+		}
+	
+	def _build_day_percentages(
+		self,
+		total_checks: int,
+		offensive_checks: int,
+		non_offensive_checks: int,
+		failed_checks: int
+	) -> dict[str, float]:
+		if total_checks <= 0:
+			return {
+				"offensive_percent": 0,
+				"non_offensive_percent": 0,
+				"failed_percent": 0
+			}
+
+		return {
+			"offensive_percent": round((offensive_checks / total_checks) * 100, 2),
+			"non_offensive_percent": round((non_offensive_checks / total_checks) * 100, 2),
+			"failed_percent": round((failed_checks / total_checks) * 100, 2)
+		}
+	
+	def _get_offense_level_distribution_by_period(
+		self,
+		start_datetime: datetime,
+		end_datetime: datetime
+	) -> list[dict[str, int]]:
+		statement = (
+			select(
+				ModerationLog.offense_level,
+				func.count(ModerationLog.id)
+			)
+			.where(ModerationLog.created_on >= start_datetime)
+			.where(ModerationLog.created_on < end_datetime)
+			.where(ModerationLog.offense_level.is_not(None))
+			.group_by(ModerationLog.offense_level)
+			.order_by(ModerationLog.offense_level)
+		)
+
+		rows = self.db.execute(statement).all()
+
+		count_by_level = {
+			int(row[0]): int(row[1])
+			for row in rows
+		}
+
+		return [
+			{
+				"level": level,
+				"count": count_by_level.get(level, 0)
+			}
+			for level in range(0, 11)
+		]

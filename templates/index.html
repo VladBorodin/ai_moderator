@@ -139,6 +139,67 @@
 
 	<div id="checksByDayChart" class="daily-chart"></div>
 </div>
+
+<div id="dayStatisticsModalOverlay" class="modal-overlay hidden">
+	<div class="modal-card day-statistics-modal">
+		<div class="modal-header">
+			<div>
+				<h3 id="dayStatisticsTitle">Статистика за день</h3>
+				<p>Детализация проверок за выбранную дату.</p>
+			</div>
+
+			<button class="modal-close-button" id="closeDayStatisticsModalButton" type="button">×</button>
+		</div>
+
+		<div class="day-statistics-grid">
+			<div class="metric-card compact">
+				<div class="metric-label">Всего проверок</div>
+				<div class="metric-value" id="dayTotalChecks">-</div>
+			</div>
+
+			<div class="metric-card compact">
+				<div class="metric-label">Нарушения</div>
+				<div class="metric-value danger-text" id="dayOffensiveChecks">-</div>
+			</div>
+
+			<div class="metric-card compact">
+				<div class="metric-label">Без нарушения</div>
+				<div class="metric-value success-text" id="dayNonOffensiveChecks">-</div>
+			</div>
+
+			<div class="metric-card compact">
+				<div class="metric-label">Ошибки</div>
+				<div class="metric-value danger-text" id="dayFailedChecks">-</div>
+			</div>
+		</div>
+
+		<div class="card inner-card">
+			<div class="card-header">
+				<div>
+					<h3>Соотношение результатов</h3>
+					<p>Процент нарушений, безопасных сообщений и ошибок за выбранный день.</p>
+				</div>
+			</div>
+
+			<div id="dayPercentChart" class="bar-chart"></div>
+		</div>
+
+		<div class="card inner-card">
+			<div class="card-header">
+				<div>
+					<h3>Уровни нарушений</h3>
+					<p>Распределение offense_level за выбранный день.</p>
+				</div>
+			</div>
+
+			<div id="dayOffenseLevelChart" class="level-chart"></div>
+		</div>
+
+		<div class="form-actions">
+			<button class="primary-button" id="confirmDayStatisticsModalButton" type="button">Закрыть</button>
+		</div>
+	</div>
+</div>
 {% endblock %}
 
 {% block scripts %}

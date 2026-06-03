@@ -15,7 +15,36 @@ const refreshDashboardButton = document.getElementById("refreshDashboardButton")
 
 const dashboardWarnings = document.getElementById("dashboardWarnings");
 
+const dayStatisticsModalOverlay = document.getElementById("dayStatisticsModalOverlay");
+const closeDayStatisticsModalButton = document.getElementById("closeDayStatisticsModalButton");
+const confirmDayStatisticsModalButton = document.getElementById("confirmDayStatisticsModalButton");
+
+const dayStatisticsTitle = document.getElementById("dayStatisticsTitle");
+const dayTotalChecks = document.getElementById("dayTotalChecks");
+const dayOffensiveChecks = document.getElementById("dayOffensiveChecks");
+const dayNonOffensiveChecks = document.getElementById("dayNonOffensiveChecks");
+const dayFailedChecks = document.getElementById("dayFailedChecks");
+const dayPercentChart = document.getElementById("dayPercentChart");
+const dayOffenseLevelChart = document.getElementById("dayOffenseLevelChart");
+
 refreshDashboardButton.addEventListener("click", loadDashboardStatistics);
+
+if (closeDayStatisticsModalButton) {
+	closeDayStatisticsModalButton.addEventListener("click", closeDayStatisticsModal);
+}
+
+if (confirmDayStatisticsModalButton) {
+	confirmDayStatisticsModalButton.addEventListener("click", closeDayStatisticsModal);
+}
+
+if (dayStatisticsModalOverlay) {
+	dayStatisticsModalOverlay.addEventListener("click", (event) => {
+		if (event.target === dayStatisticsModalOverlay) {
+			closeDayStatisticsModal();
+		}
+	});
+}
+
 document.addEventListener("DOMContentLoaded", loadDashboardStatistics);
 
 async function loadDashboardStatistics() {
@@ -140,8 +169,10 @@ function renderChecksByDay(days) {
 			? 0
 			: Math.round((day.failed / day.total) * 100);
 
-		const row = document.createElement("div");
-		row.className = "daily-row";
+		const row = document.createElement("button");
+		row.className = "daily-row daily-row-button";
+		row.type = "button";
+
 		row.innerHTML = `
 			<div class="daily-date">${escapeHtml(formatShortDate(day.date))}</div>
 			<div class="daily-track">
@@ -150,9 +181,13 @@ function renderChecksByDay(days) {
 			</div>
 			<div class="daily-value">
 				<span>${escapeHtml(day.total)}</span>
-				<small>${escapeHtml(day.failed)} errors</small>
+				<small>${escapeHtml(day.failed)} ошибок</small>
 			</div>
 		`;
+
+		row.addEventListener("click", () => {
+			openDayStatisticsModal(day.date);
+		});
 
 		checksByDayChart.appendChild(row);
 	}
@@ -247,6 +282,142 @@ function formatNumber(value) {
 	return Number(value).toLocaleString();
 }
 
+async function openDayStatisticsModal(dateText) {
+	dayStatisticsModalOverlay.classList.remove("hidden");
+	renderDayStatisticsLoading(dateText);
+
+	try {
+		const response = await fetch(`/dashboard/statistics/day/${encodeURIComponent(dateText)}`);
+		const statistics = await response.json();
+
+		if (!response.ok) {
+			renderDayStatisticsError(dateText, statistics);
+			return;
+		}
+
+		renderDayStatistics(statistics);
+	} catch (error) {
+		renderDayStatisticsError(dateText, error);
+	}
+}
+
+function closeDayStatisticsModal() {
+	if (!dayStatisticsModalOverlay) {
+		return;
+	}
+
+	dayStatisticsModalOverlay.classList.add("hidden");
+}
+
+function renderDayStatisticsLoading(dateText) {
+	dayStatisticsTitle.textContent = `Статистика за ${dateText}`;
+	dayTotalChecks.textContent = "-";
+	dayOffensiveChecks.textContent = "-";
+	dayNonOffensiveChecks.textContent = "-";
+	dayFailedChecks.textContent = "-";
+	dayPercentChart.innerHTML = `<div class="empty-state compact">Загрузка...</div>`;
+	dayOffenseLevelChart.innerHTML = "";
+}
+
+function renderDayStatisticsError(dateText, error) {
+	const errorText = error instanceof Error
+		? error.message
+		: JSON.stringify(error, null, 2);
+
+	dayStatisticsTitle.textContent = `Статистика за ${dateText}`;
+	dayTotalChecks.textContent = "-";
+	dayOffensiveChecks.textContent = "-";
+	dayNonOffensiveChecks.textContent = "-";
+	dayFailedChecks.textContent = "-";
+
+	dayPercentChart.innerHTML = `
+		<div class="warning-card danger">
+			<div class="warning-icon">!</div>
+			<div>
+				<strong>Ошибка загрузки статистики</strong>
+				<span>${escapeHtml(errorText)}</span>
+			</div>
+		</div>
+	`;
+
+	dayOffenseLevelChart.innerHTML = "";
+}
+
+function renderDayStatistics(statistics) {
+	const summary = statistics.summary;
+	const percentages = statistics.percentages;
+
+	dayStatisticsTitle.textContent = `Статистика за ${statistics.date}`;
+
+	dayTotalChecks.textContent = formatNumber(summary.total_checks);
+	dayOffensiveChecks.textContent = formatNumber(summary.offensive_checks);
+	dayNonOffensiveChecks.textContent = formatNumber(summary.non_offensive_checks);
+	dayFailedChecks.textContent = formatNumber(summary.failed_checks);
+
+	renderDayPercentChart(percentages);
+	renderDayOffenseLevelChart(statistics.offense_level_distribution);
+}
+
+function renderDayPercentChart(percentages) {
+	const rows = [
+		{
+			name: "Нарушение",
+			value: percentages.offensive_percent,
+			className: "danger"
+		},
+		{
+			name: "Без нарушения",
+			value: percentages.non_offensive_percent,
+			className: "success"
+		},
+		{
+			name: "Ошибка",
+			value: percentages.failed_percent,
+			className: "warning"
+		}
+	];
+
+	dayPercentChart.innerHTML = "";
+
+	for (const row of rows) {
+		const percent = Math.max(0, Math.min(Number(row.value || 0), 100));
+
+		const element = document.createElement("div");
+		element.className = "bar-row";
+		element.innerHTML = `
+			<div class="bar-label">${escapeHtml(row.name)}</div>
+			<div class="bar-track">
+				<div class="bar-fill ${row.className}" style="width: ${percent}%"></div>
+			</div>
+			<div class="bar-value">${escapeHtml(percent)}%</div>
+		`;
+
+		dayPercentChart.appendChild(element);
+	}
+}
+
+function renderDayOffenseLevelChart(distribution) {
+	dayOffenseLevelChart.innerHTML = "";
+
+	const maxValue = Math.max(...distribution.map(item => item.count), 1);
+
+	for (const item of distribution) {
+		const percent = Math.round((item.count / maxValue) * 100);
+
+		const column = document.createElement("div");
+		column.className = "level-column";
+		column.innerHTML = `
+			<div class="level-bar-wrap">
+				<div class="level-bar" style="height: ${percent}%"></div>
+			</div>
+			<div class="level-count">${escapeHtml(item.count)}</div>
+			<div class="level-label">${escapeHtml(item.level)}</div>
+		`;
+
+		dayOffenseLevelChart.appendChild(column);
+	}
+}
+
 function escapeHtml(value) {
 	return String(value)
 		.replaceAll("&", "&amp;")
@@ -302,3 +473,9 @@ function getWarningIcon(level) {
 
 	return "!";
 }
+
+document.addEventListener("keydown", (event) => {
+	if (event.key === "Escape") {
+		closeDayStatisticsModal();
+	}
+});

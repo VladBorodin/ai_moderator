@@ -1579,3 +1579,64 @@ select:focus {
 	color: var(--text-muted);
 	line-height: 1.5;
 }
+
+.daily-row-button {
+	width: 100%;
+	border: none;
+	cursor: pointer;
+	color: inherit;
+	background: transparent;
+	font: inherit;
+	text-align: left;
+	border-radius: 14px;
+	padding: 8px;
+	transition: 0.18s ease;
+}
+
+.daily-row-button:hover {
+	background: rgba(255, 255, 255, 0.06);
+}
+
+.day-statistics-modal {
+	width: min(980px, 100%);
+	max-height: 92vh;
+	overflow: auto;
+}
+
+.day-statistics-grid {
+	display: grid;
+	grid-template-columns: repeat(4, 1fr);
+	gap: 14px;
+	margin-bottom: 16px;
+}
+
+.metric-card.compact {
+	padding: 16px;
+}
+
+.metric-card.compact .metric-value {
+	font-size: 28px;
+}
+
+.inner-card {
+	margin-top: 16px;
+	padding: 18px;
+	background: rgba(2, 6, 23, 0.22);
+}
+
+.empty-state.compact {
+	min-height: 90px;
+	padding: 16px;
+}
+
+@media (max-width: 900px) {
+	.day-statistics-grid {
+		grid-template-columns: repeat(2, 1fr);
+	}
+}
+
+@media (max-width: 560px) {
+	.day-statistics-grid {
+		grid-template-columns: 1fr;
+	}
+}
