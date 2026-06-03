@@ -32,8 +32,25 @@ def check_message(
 	db: Session = Depends(get_db)
 ) -> ModerationCheckResponseDto:
 	moderation_log_service = ModerationLogService(db)
+	system_setting_service = SystemSettingService(db)
 
-	request_json = request_data.model_dump(mode="json")
+	store_full_request_json = system_setting_service.get_bool(
+		code="moderation.store_full_request_json",
+		default_value=True
+	)
+
+	store_full_response_json = system_setting_service.get_bool(
+		code="moderation.store_full_response_json",
+		default_value=True
+	)
+
+	full_request_json = request_data.model_dump(mode="json")
+	request_json = _build_stored_request_json(
+		request_data=request_data,
+		full_request_json=full_request_json,
+		store_full_request_json=store_full_request_json
+	)
+
 	last_message_text = _get_last_message_text(request_data)
 	last_message_name = _get_last_message_name(request_data)
 	user_name = request_data.user_name or last_message_name
@@ -53,7 +70,6 @@ def check_message(
 	try:
 		ai_provider_setting_service = AiProviderSettingService(db)
 		prompt_template_service = PromptTemplateService(db)
-		system_setting_service = SystemSettingService(db)
 
 		active_provider = ai_provider_setting_service.get_active()
 
@@ -87,9 +103,11 @@ def check_message(
 
 		processing_time_ms = int((perf_counter() - start_time) * 1000)
 
+		response_json = result.model_dump(mode="json") if store_full_response_json else None
+
 		moderation_log_service.complete_log(
 			moderation_log_id=moderation_log.id,
-			response_json=result.model_dump(mode="json"),
+			response_json=response_json,
 			verdict=result.verdict,
 			offense_level=result.offense_level,
 			description=result.description,
@@ -171,3 +189,23 @@ def _get_last_message_name(
 		return None
 
 	return request_data.messages[-1].name
+
+def _build_stored_request_json(
+	request_data: ModerationCheckRequestDto,
+	full_request_json: dict,
+	store_full_request_json: bool
+) -> dict:
+	if store_full_request_json:
+		return full_request_json
+
+	return {
+		"stored": False,
+		"reason": "Full request JSON storage is disabled by system setting.",
+		"source_system": request_data.source_system,
+		"chat_id": request_data.chat_id,
+		"user_id": request_data.user_id,
+		"user_name": request_data.user_name,
+		"external_message_id": request_data.external_message_id,
+		"messages_count": len(request_data.messages),
+		"last_message_text_stored_in_column": True
+	}

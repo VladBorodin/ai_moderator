@@ -2,6 +2,29 @@ const refreshSystemSettingsButton = document.getElementById("refreshSystemSettin
 const systemSettingsEmptyState = document.getElementById("systemSettingsEmptyState");
 const systemSettingsList = document.getElementById("systemSettingsList");
 
+const systemSettingDisplayMap = {
+	"ai.max_tokens": {
+		title: "Максимум токенов ответа ИИ",
+		help: "Ограничивает максимальный размер ответа модели при модерации."
+	},
+	"ai.temperature": {
+		title: "Температура модели",
+		help: "Чем ниже значение, тем стабильнее и менее случайным будет ответ модели."
+	},
+	"moderation.log_retention_days": {
+		title: "Срок хранения журнала",
+		help: "Количество дней, в течение которых записи журнала проверок должны храниться до очистки."
+	},
+	"moderation.store_full_request_json": {
+		title: "Сохранять JSON запроса",
+		help: "Определяет, нужно ли сохранять полный входящий JSON в журнале проверок."
+	},
+	"moderation.store_full_response_json": {
+		title: "Сохранять JSON ответа ИИ",
+		help: "Определяет, нужно ли сохранять полный JSON ответа модели в журнале проверок."
+	}
+};
+
 refreshSystemSettingsButton.addEventListener("click", loadSystemSettings);
 document.addEventListener("DOMContentLoaded", loadSystemSettings);
 
@@ -27,16 +50,22 @@ function renderSystemSettings(settings) {
 	systemSettingsList.innerHTML = "";
 
 	for (const setting of settings) {
-		const card = document.createElement("div");
-		card.className = "setting-card";
+        const card = document.createElement("div");
+        card.className = "setting-card";
+
+        const displayInfo = systemSettingDisplayMap[setting.code] || {
+            title: setting.code,
+            help: setting.description || "Системная настройка приложения."
+        };
 
 		card.innerHTML = `
 			<div class="setting-card-header">
-				<div>
-					<div class="setting-code">${escapeHtml(setting.code)}</div>
-					<div class="setting-description">${escapeHtml(setting.description ?? "-")}</div>
-				</div>
-			</div>
+                <div>
+                    <div class="setting-title">${escapeHtml(displayInfo.title)}</div>
+                    <div class="setting-code">${escapeHtml(setting.code)}</div>
+                    <div class="setting-description">${escapeHtml(displayInfo.help)}</div>
+                </div>
+            </div>
 
 			<div class="setting-edit-row">
 				<div class="form-row">

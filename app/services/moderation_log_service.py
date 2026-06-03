@@ -39,23 +39,22 @@ class ModerationLogService:
 	def complete_log(
 		self,
 		moderation_log_id: UUID,
-		response_json: dict,
+		response_json: dict | None,
 		verdict: int,
 		offense_level: int,
 		description: str,
 		processing_time_ms: int
-	) -> ModerationLog:
-		moderation_log = self.db.get(ModerationLog, moderation_log_id)
+	) -> ModerationLog | None:
+		moderation_log = self.get_by_id(moderation_log_id)
 
 		if moderation_log is None:
-			raise ValueError(f"Moderation log with id {moderation_log_id} was not found.")
+			return None
 
 		moderation_log.response_json = response_json
 		moderation_log.verdict = verdict
 		moderation_log.offense_level = offense_level
 		moderation_log.description = description
 		moderation_log.processing_time_ms = processing_time_ms
-		moderation_log.error_text = None
 
 		self.db.commit()
 		self.db.refresh(moderation_log)

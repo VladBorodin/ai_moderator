@@ -1414,3 +1414,14 @@ select:focus {
 	min-height: 92px;
 	resize: vertical;
 }
+
+.setting-title {
+	color: var(--text);
+	font-size: 18px;
+	font-weight: 850;
+	letter-spacing: -0.03em;
+}
+
+.setting-title + .setting-code {
+	margin-top: 6px;
+}
