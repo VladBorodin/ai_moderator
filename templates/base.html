@@ -76,7 +76,7 @@
 
 				<div class="topbar-actions">
 					<a class="ghost-button" href="/docs" target="_blank">Swagger</a>
-					<a class="ghost-button" href="/health" target="_blank">Health</a>
+					<button class="ghost-button" id="healthModalButton" type="button">Health</button>
 				</div>
 			</header>
 
@@ -86,6 +86,38 @@
 		</main>
 	</div>
 
+	<div id="healthModalOverlay" class="modal-overlay hidden">
+		<div class="modal-card">
+			<div class="modal-header">
+				<div>
+					<h3>Состояние сервиса</h3>
+					<p>Проверка endpoint `/health`.</p>
+				</div>
+
+				<button class="modal-close-button" id="closeHealthModalButton" type="button">×</button>
+			</div>
+
+			<div id="healthModalStatus" class="health-status-card">
+				<div class="health-status-dot"></div>
+				<div>
+					<strong>Проверка не выполнена</strong>
+					<span>Нажми Health, чтобы проверить состояние сервиса.</span>
+				</div>
+			</div>
+
+			<div class="json-box">
+				<div class="result-label">Ответ `/health`</div>
+				<pre id="healthModalJson">-</pre>
+			</div>
+
+			<div class="form-actions">
+				<button class="secondary-button" id="refreshHealthModalButton" type="button">Обновить</button>
+				<button class="primary-button" id="confirmHealthModalButton" type="button">Закрыть</button>
+			</div>
+		</div>
+	</div>
+
+	<script src="/static/js/base.js"></script>
 	{% block scripts %}{% endblock %}
 </body>
 </html>
