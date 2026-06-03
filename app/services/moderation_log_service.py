@@ -1,6 +1,7 @@
 from uuid import UUID
 
-from sqlalchemy import select
+from datetime import UTC, datetime, timedelta
+from sqlalchemy import select, delete
 from sqlalchemy.orm import Session
 
 from app.models.moderation_log import ModerationLog
@@ -93,3 +94,22 @@ class ModerationLogService:
 		)
 
 		return list(self.db.scalars(statement).all())
+	
+	def delete_older_than_days(
+		self,
+		days: int
+	) -> int:
+		if days <= 0:
+			return 0
+
+		delete_before = datetime.now(UTC) - timedelta(days=days)
+
+		statement = (
+			delete(ModerationLog)
+			.where(ModerationLog.created_on < delete_before)
+		)
+
+		result = self.db.execute(statement)
+		self.db.commit()
+
+		return int(result.rowcount or 0)
