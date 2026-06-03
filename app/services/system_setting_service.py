@@ -2,23 +2,56 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.models.system_setting import SystemSetting
+from app.schemas.system_setting import SystemSettingUpdateDto
 
 
 class SystemSettingService:
 	def __init__(self, db: Session) -> None:
 		self.db = db
 
-	def get_value(
+	def get_all(self) -> list[SystemSetting]:
+		statement = (
+			select(SystemSetting)
+			.order_by(SystemSetting.code)
+		)
+
+		return list(self.db.scalars(statement).all())
+
+	def get_by_code(
 		self,
-		code: str,
-		default_value: str | None = None
-	) -> str | None:
+		code: str
+	) -> SystemSetting | None:
 		statement = (
 			select(SystemSetting)
 			.where(SystemSetting.code == code)
 		)
 
-		setting = self.db.scalars(statement).first()
+		return self.db.scalars(statement).first()
+
+	def update_by_code(
+		self,
+		code: str,
+		dto: SystemSettingUpdateDto
+	) -> SystemSetting | None:
+		setting = self.get_by_code(code)
+
+		if setting is None:
+			return None
+
+		setting.value = dto.value
+		setting.description = dto.description
+
+		self.db.commit()
+		self.db.refresh(setting)
+
+		return setting
+
+	def get_value(
+		self,
+		code: str,
+		default_value: str | None = None
+	) -> str | None:
+		setting = self.get_by_code(code)
 
 		if setting is None:
 			return default_value

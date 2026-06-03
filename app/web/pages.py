@@ -77,3 +77,14 @@ def get_system_logs_page(request: Request) -> HTMLResponse:
 			"active_page": "system_logs"
 		}
 	)
+
+@router.get("/system-settings", response_class=HTMLResponse)
+def get_system_settings_page(request: Request) -> HTMLResponse:
+	return templates.TemplateResponse(
+		request=request,
+		name="system_settings.html",
+		context={
+			"page_title": "Системные настройки",
+			"active_page": "system_settings"
+		}
+	)

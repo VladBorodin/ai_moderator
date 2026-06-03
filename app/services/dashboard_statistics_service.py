@@ -18,12 +18,16 @@ class DashboardStatisticsService:
 		active_provider = self._get_active_provider_info()
 		active_prompt = self._get_active_prompt_info()
 
+		recent_error_summary = self._get_recent_error_summary(hours=24)
+
 		return {
 			"summary": summary,
+			"recent_error_summary": recent_error_summary,
 			"active_provider": active_provider,
 			"active_prompt": active_prompt,
 			"warnings": self._get_warnings(
 				summary=summary,
+				recent_error_summary=recent_error_summary,
 				active_provider=active_provider,
 				active_prompt=active_prompt
 			),
@@ -200,6 +204,7 @@ class DashboardStatisticsService:
 	def _get_warnings(
 		self,
 		summary: dict[str, int | float | None],
+		recent_error_summary: dict[str, int | float],
 		active_provider: dict[str, Any] | None,
 		active_prompt: dict[str, Any] | None
 	) -> list[dict[str, str]]:
@@ -223,29 +228,27 @@ class DashboardStatisticsService:
 				}
 			)
 
-		failed_checks = int(summary["failed_checks"] or 0)
-		total_checks = int(summary["total_checks"] or 0)
+		recent_failed_checks = int(recent_error_summary["failed_checks"] or 0)
+		recent_total_checks = int(recent_error_summary["total_checks"] or 0)
+		recent_error_rate = float(recent_error_summary["error_rate"] or 0)
 
-		if failed_checks > 0:
+		if recent_failed_checks > 0:
 			warnings.append(
 				{
 					"level": "warning",
-					"title": "Есть ошибки проверок",
-					"description": f"В журнале найдено ошибок: {failed_checks}. Проверь системные логи и журнал проверок."
+					"title": "Есть недавние ошибки проверок",
+					"description": f"За последние 24 часа найдено ошибок: {recent_failed_checks}. Проверь системные логи и журнал проверок."
 				}
 			)
 
-		if total_checks >= 10:
-			error_rate = failed_checks / total_checks
-
-			if error_rate >= 0.2:
-				warnings.append(
-					{
-						"level": "danger",
-						"title": "Высокая доля ошибок",
-						"description": f"Доля ошибок составляет {round(error_rate * 100, 1)}%. Возможна проблема с AI provider или настройками."
-					}
-				)
+		if recent_total_checks >= 10 and recent_error_rate >= 0.2:
+			warnings.append(
+				{
+					"level": "danger",
+					"title": "Высокая доля недавних ошибок",
+					"description": f"За последние 24 часа доля ошибок составляет {round(recent_error_rate * 100, 1)}%. Возможна проблема с AI provider или настройками."
+				}
+			)
 
 		if not warnings:
 			warnings.append(
@@ -257,3 +260,29 @@ class DashboardStatisticsService:
 			)
 
 		return warnings
+	
+	def _get_recent_error_summary(self, hours: int = 24) -> dict[str, int | float]:
+		start_datetime = datetime.now(UTC) - timedelta(hours=hours)
+
+		statement = select(
+			func.count(ModerationLog.id).label("total_checks"),
+			func.sum(
+				case(
+					(ModerationLog.error_text.is_not(None), 1),
+					else_=0
+				)
+			).label("failed_checks")
+		).where(ModerationLog.created_on >= start_datetime)
+
+		result = self.db.execute(statement).one()
+
+		total_checks = int(result.total_checks or 0)
+		failed_checks = int(result.failed_checks or 0)
+
+		error_rate = failed_checks / total_checks if total_checks > 0 else 0
+
+		return {
+			"total_checks": total_checks,
+			"failed_checks": failed_checks,
+			"error_rate": error_rate
+		}

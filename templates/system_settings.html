@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="card">
+	<div class="card-header card-header-row">
+		<div>
+			<h3>Системные настройки</h3>
+			<p>Параметры работы сервиса, которые применяются при новых проверках.</p>
+		</div>
+
+		<button class="secondary-button" id="refreshSystemSettingsButton">Обновить</button>
+	</div>
+
+	<div id="systemSettingsEmptyState" class="empty-state">
+		<div class="empty-icon">⚒</div>
+		<div>Настройки не найдены</div>
+		<span>Проверь seed_db и таблицу system_setting.</span>
+	</div>
+
+	<div id="systemSettingsList" class="settings-list hidden"></div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="/static/js/system_settings.js"></script>
+{% endblock %}
