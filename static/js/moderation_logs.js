@@ -40,7 +40,7 @@ function renderLogs(logs) {
 		const verdictClass = log.verdict === 1 ? "badge danger" : "badge success";
 
 		row.innerHTML = `
-			<td>${escapeHtml(log.id)}</td>
+			<td title="${escapeHtml(log.id)}">${escapeHtml(formatShortId(log.id))}</td>
 			<td>${escapeHtml(formatDate(log.created_on))}</td>
 			<td>${escapeHtml(log.source_system ?? "-")}</td>
 			<td>${escapeHtml(log.chat_id ?? "-")}</td>
@@ -48,6 +48,7 @@ function renderLogs(logs) {
 			<td class="description-cell">${escapeHtml(log.last_message_text ?? "-")}</td>
 			<td><span class="${verdictClass}">${verdictText}</span></td>
 			<td><span class="level-pill">${escapeHtml(log.offense_level ?? "-")}</span></td>
+			<td>${escapeHtml(formatProcessingTime(log.processing_time_ms))}</td>
 			<td class="description-cell">${escapeHtml(log.description ?? log.error_text ?? "-")}</td>
 		`;
 
@@ -82,4 +83,20 @@ function escapeHtml(value) {
 		.replaceAll(">", "&gt;")
 		.replaceAll('"', "&quot;")
 		.replaceAll("'", "&#039;");
+}
+
+function formatShortId(value) {
+	if (!value) {
+		return "-";
+	}
+
+	return String(value).slice(0, 8);
+}
+
+function formatProcessingTime(value) {
+	if (value === null || value === undefined) {
+		return "-";
+	}
+
+	return `${value} ms`;
 }

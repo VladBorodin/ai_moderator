@@ -531,7 +531,7 @@ pre {
 .data-table {
 	width: 100%;
 	border-collapse: collapse;
-	min-width: 980px;
+	min-width: 1280px;
 }
 
 .data-table th,
@@ -559,7 +559,7 @@ pre {
 }
 
 .description-cell {
-	max-width: 420px;
+	max-width: 360px;
 	line-height: 1.45;
 }
 
@@ -1186,4 +1186,9 @@ select:focus {
 	.daily-value {
 		align-items: flex-start;
 	}
+}
+
+.badge.warning {
+	color: #fde68a;
+	background: rgba(245, 158, 11, 0.16);
 }
