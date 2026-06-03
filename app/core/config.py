@@ -1,4 +1,4 @@
-from pydantic_settings import BaseSettings
+from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Settings(BaseSettings):
@@ -8,13 +8,23 @@ class Settings(BaseSettings):
 	ai_provider_type: str = "openai_compatible"
 	ai_provider_url: str = "http://localhost:11434/v1/chat/completions"
 	ai_model_name: str = "llama3.1"
-	ai_api_key: str | None = None
+	ai_api_key: str = ""
 	ai_timeout_seconds: int = 60
 
-	database_url: str = "postgresql+psycopg://ai_moderator_user:ai_moderator_password@localhost:55432/ai_moderator"
+	database_url: str
 
-	class Config:
-		env_file = ".env"
+	admin_auth_enabled: bool = True
+	admin_username: str = "admin"
+	admin_password: str = "admin"
+	admin_cookie_secret: str = "ai_moderator_dev_secret"
+	admin_session_ttl_seconds: int = 43200
+	admin_cookie_secure: bool = False
+
+	model_config = SettingsConfigDict(
+		env_file=".env",
+		env_file_encoding="utf-8",
+		extra="ignore"
+	)
 
 
 settings = Settings()

@@ -13,6 +13,8 @@ from app.api.ai_provider_settings import router as ai_provider_settings_router
 from app.api.moderation import router as moderation_router
 from app.api.prompt_templates import router as prompt_templates_router
 from app.api.system_logs import router as system_logs_router
+from app.api.admin_auth import router as admin_auth_router
+from app.core.admin_auth import register_admin_auth_middleware
 from app.db.init_db import init_db
 from app.web.pages import router as pages_router
 
@@ -36,6 +38,7 @@ app = FastAPI(
 	lifespan=lifespan
 )
 
+register_admin_auth_middleware(app)
 
 app.mount(
 	"/static",
@@ -50,6 +53,7 @@ app.include_router(prompt_templates_router)
 app.include_router(system_logs_router)
 app.include_router(dashboard_router)
 app.include_router(system_settings_router)
+app.include_router(admin_auth_router)
 
 
 @app.get("/health")

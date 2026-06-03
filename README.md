@@ -261,7 +261,141 @@ AI_API_KEY=
 AI_TIMEOUT_SECONDS=60
 
 DATABASE_URL=postgresql+psycopg://ai_moderator_user:ai_moderator_password@localhost:55432/ai_moderator
+
+ADMIN_AUTH_ENABLED=true
+ADMIN_USERNAME=admin
+ADMIN_PASSWORD=change_me
+ADMIN_COOKIE_SECRET=change_me_long_random_string
+ADMIN_SESSION_TTL_SECONDS=43200
+ADMIN_COOKIE_SECURE=false
 ```
+
+## Настройка входа в админ-панель
+
+Административная панель защищена простым логином и паролем.
+
+Настройки хранятся в `.env`:
+
+```env
+ADMIN_AUTH_ENABLED=true
+ADMIN_USERNAME=admin
+ADMIN_PASSWORD=change_me
+ADMIN_COOKIE_SECRET=change_me_long_random_string
+ADMIN_SESSION_TTL_SECONDS=43200
+ADMIN_COOKIE_SECURE=false
+
+Расшифровка:
+
+ADMIN_AUTH_ENABLED - включает или отключает защиту админ-панели
+ADMIN_USERNAME - логин администратора
+ADMIN_PASSWORD - пароль администратора
+ADMIN_COOKIE_SECRET - секрет для подписи cookie-сессии
+ADMIN_SESSION_TTL_SECONDS - время жизни сессии в секундах
+ADMIN_COOKIE_SECURE - true, если приложение работает только по HTTPS
+
+Для локального запуска можно оставить:
+
+ADMIN_COOKIE_SECURE=false
+
+Для боевого окружения нужно:
+
+ADMIN_AUTH_ENABLED=true
+ADMIN_PASSWORD=<сложный пароль>
+ADMIN_COOKIE_SECRET=<длинная случайная строка>
+
+Сгенерировать секрет можно командой:
+
+python -c "import secrets; print(secrets.token_urlsafe(32))"
+
+После изменения логина, пароля или ADMIN_COOKIE_SECRET нужно перезапустить приложение.
+
+Если нужно временно отключить авторизацию на локальном стенде:
+
+ADMIN_AUTH_ENABLED=false
+
+Не отключай авторизацию на сервере, доступном другим пользователям.
+
+
+## 2. Блок “Системные логи” лучше заменить на расширенный
+
+Текущий раздел “Системные логи” замени на:
+
+```markdown
+## Системные логи
+
+Открыть в UI:
+
+```text
+http://127.0.0.1:18080/system-logs
+
+Файлы логов:
+
+logs/app.log
+logs/error.log
+
+app.log содержит обычные события приложения:
+
+старт приложения
+инициализация БД
+очистка старых записей журнала
+ожидаемые предупреждения
+информационные сообщения
+
+error.log содержит ошибки, которые требуют внимания:
+
+ошибки подключения к AI provider
+timeout от AI provider
+невалидный JSON от модели
+ошибки парсинга ответа
+неожиданные исключения backend
+
+В UI можно:
+
+посмотреть последние строки app.log
+посмотреть последние строки error.log
+скачать app.log
+скачать error.log
+
+Файлы логов не нужно коммитить в Git. Они должны быть исключены через .gitignore:
+
+logs/
+*.log
+
+Если приложение запускается, но модерация не работает, сначала проверь:
+
+Dashboard
+Журнал проверок
+Системные логи
+
+Если AI provider возвращает 401, 403, 429, 503 или timeout, подробности должны появиться в error.log.
+
+
+## 3. Добавь в “Частые проблемы” пункт про вход
+
+Перед “Порт приложения занят” можно добавить:
+
+```markdown
+### Не получается войти в админ-панель
+
+Проверь `.env`:
+
+```env
+ADMIN_USERNAME=admin
+ADMIN_PASSWORD=change_me
+
+После изменения логина или пароля перезапусти приложение:
+
+start.cmd
+
+Если cookie-сессия ведет себя странно, можно очистить cookies браузера для 127.0.0.1:18080 или изменить ADMIN_COOKIE_SECRET.
+
+
+## 4. Важно: в README сейчас есть сломанные markdown fence
+
+В загруженном README в начале видно лишнее:
+
+```markdown
+````markdown
 
 ## Настройка PostgreSQL
 
