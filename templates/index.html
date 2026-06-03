@@ -4,10 +4,10 @@
 <div class="dashboard-grid">
 	<div class="hero-card">
 		<div class="eyebrow">AI Moderator</div>
-		<h2>Контекстная модерация без банов по словарю</h2>
+		<h2>Контекстная модерация через AI provider</h2>
 		<p>
-			Приложение-прокладка принимает JSON с фрагментом переписки,
-			оценивает последнее сообщение и сохраняет результат проверки в PostgreSQL.
+			Сервис принимает JSON с фрагментом переписки, оценивает последнее сообщение
+			и возвращает простой verdict для внешней системы заказчика.
 		</p>
 
 		<div class="hero-actions">
@@ -17,64 +17,119 @@
 	</div>
 
 	<div class="metric-card">
-		<div class="metric-label">Backend</div>
-		<div class="metric-value">FastAPI</div>
-		<div class="metric-text">API и административный UI в одном приложении.</div>
+		<div class="metric-label">Всего проверок</div>
+		<div class="metric-value" id="totalChecksMetric">-</div>
+		<div class="metric-text">Все запросы, сохраненные в журнале проверок.</div>
 	</div>
 
 	<div class="metric-card">
-		<div class="metric-label">Database</div>
-		<div class="metric-value">PostgreSQL</div>
-		<div class="metric-text">Журнал проверок и будущие системные настройки.</div>
+		<div class="metric-label">Offensive</div>
+		<div class="metric-value danger-text" id="offensiveChecksMetric">-</div>
+		<div class="metric-text">Проверки, где модель вернула verdict = 1.</div>
 	</div>
 
 	<div class="metric-card">
-		<div class="metric-label">AI Provider</div>
-		<div class="metric-value muted">Mock</div>
-		<div class="metric-text">Реальный ИИ будет подключен после UI и настроек.</div>
+		<div class="metric-label">No offensive</div>
+		<div class="metric-value success-text" id="nonOffensiveChecksMetric">-</div>
+		<div class="metric-text">Проверки, где модель вернула verdict = 0.</div>
+	</div>
+</div>
+
+<div class="dashboard-status-grid">
+	<div class="card">
+		<div class="card-header">
+			<div>
+				<h3>Активный AI provider</h3>
+				<p>Провайдер, который используется для новых проверок.</p>
+			</div>
+		</div>
+
+		<div id="activeProviderStatus" class="status-card">
+			<div class="status-title">-</div>
+			<div class="status-subtitle">Данные загружаются...</div>
+		</div>
+	</div>
+
+	<div class="card">
+		<div class="card-header">
+			<div>
+				<h3>Активный промт</h3>
+				<p>Системная инструкция, передаваемая модели.</p>
+			</div>
+		</div>
+
+		<div id="activePromptStatus" class="status-card">
+			<div class="status-title">-</div>
+			<div class="status-subtitle">Данные загружаются...</div>
+		</div>
+	</div>
+
+	<div class="card">
+		<div class="card-header">
+			<div>
+				<h3>Ошибки</h3>
+				<p>Запросы, завершившиеся с error_text.</p>
+			</div>
+		</div>
+
+		<div class="status-card">
+			<div class="status-title danger-text" id="failedChecksMetric">-</div>
+			<div class="status-subtitle">Ошибки подключения, парсинга или обработки.</div>
+		</div>
+	</div>
+
+	<div class="card">
+		<div class="card-header">
+			<div>
+				<h3>Среднее время</h3>
+				<p>Среднее время обработки проверки.</p>
+			</div>
+		</div>
+
+		<div class="status-card">
+			<div class="status-title" id="averageProcessingTimeMetric">-</div>
+			<div class="status-subtitle">В миллисекундах.</div>
+		</div>
+	</div>
+</div>
+
+<div class="dashboard-charts-grid">
+	<div class="card">
+		<div class="card-header card-header-row">
+			<div>
+				<h3>Verdict distribution</h3>
+				<p>Соотношение результатов модерации.</p>
+			</div>
+			<button class="secondary-button" id="refreshDashboardButton">Обновить</button>
+		</div>
+
+		<div id="verdictDistributionChart" class="bar-chart"></div>
+	</div>
+
+	<div class="card">
+		<div class="card-header">
+			<div>
+				<h3>Offense level</h3>
+				<p>Распределение проверок по уровню нарушения.</p>
+			</div>
+		</div>
+
+		<div id="offenseLevelChart" class="level-chart"></div>
 	</div>
 </div>
 
 <div class="card">
 	<div class="card-header">
 		<div>
-			<h3>Ближайший план</h3>
-			<p>Текущая дорожная карта разработки.</p>
+			<h3>Проверки по дням</h3>
+			<p>Количество проверок и ошибок за последние дни.</p>
 		</div>
 	</div>
 
-	<div class="timeline">
-		<div class="timeline-item done">
-			<div class="timeline-dot"></div>
-			<div>
-				<strong>Базовый backend</strong>
-				<span>FastAPI, PostgreSQL, модели, DTO, журналирование.</span>
-			</div>
-		</div>
-
-		<div class="timeline-item active">
-			<div class="timeline-dot"></div>
-			<div>
-				<strong>Административный UI</strong>
-				<span>Ручной тест модерации и просмотр журнала.</span>
-			</div>
-		</div>
-
-		<div class="timeline-item">
-			<div class="timeline-dot"></div>
-			<div>
-				<strong>Настройки ИИ</strong>
-				<span>Провайдеры, модели, URL, таймауты.</span>
-			</div>
-		</div>
-
-		<div class="timeline-item">
-			<div class="timeline-dot"></div>
-			<div>
-				<strong>Реальный ИИ</strong>
-				<span>Подключение локальной модели или внешнего API.</span>
-			</div>
-		</div>
-	</div>
+	<div id="checksByDayChart" class="daily-chart"></div>
 </div>
+{% endblock %}
+
+{% block scripts %}
+<script src="/static/js/dashboard.js"></script>
 {% endblock %}

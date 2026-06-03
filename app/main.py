@@ -1,5 +1,6 @@
 import logging
 
+from app.api.dashboard import router as dashboard_router
 from app.core.logging_config import setup_logging
 from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
@@ -46,6 +47,7 @@ app.include_router(moderation_router)
 app.include_router(ai_provider_settings_router)
 app.include_router(prompt_templates_router)
 app.include_router(system_logs_router)
+app.include_router(dashboard_router)
 
 
 @app.get("/health")
