@@ -1266,3 +1266,71 @@ select:focus {
 		grid-template-columns: 1fr;
 	}
 }
+
+.warnings-list {
+	display: flex;
+	flex-direction: column;
+	gap: 12px;
+}
+
+.warning-card {
+	display: grid;
+	grid-template-columns: 42px 1fr;
+	gap: 14px;
+	align-items: flex-start;
+	padding: 16px;
+	border: 1px solid var(--card-border);
+	border-radius: var(--radius-lg);
+	background: rgba(255, 255, 255, 0.05);
+}
+
+.warning-card.success {
+	border-color: rgba(34, 197, 94, 0.28);
+	background: rgba(34, 197, 94, 0.08);
+}
+
+.warning-card.warning {
+	border-color: rgba(245, 158, 11, 0.28);
+	background: rgba(245, 158, 11, 0.08);
+}
+
+.warning-card.danger {
+	border-color: rgba(251, 113, 133, 0.28);
+	background: rgba(251, 113, 133, 0.08);
+}
+
+.warning-icon {
+	width: 42px;
+	height: 42px;
+	display: grid;
+	place-items: center;
+	border-radius: 16px;
+	color: #ffffff;
+	background: rgba(255, 255, 255, 0.12);
+	font-weight: 900;
+}
+
+.warning-card.success .warning-icon {
+	background: rgba(34, 197, 94, 0.35);
+}
+
+.warning-card.warning .warning-icon {
+	background: rgba(245, 158, 11, 0.35);
+}
+
+.warning-card.danger .warning-icon {
+	background: rgba(251, 113, 133, 0.35);
+}
+
+.warning-card strong {
+	display: block;
+	color: var(--text);
+	font-size: 16px;
+}
+
+.warning-card span {
+	display: block;
+	margin-top: 4px;
+	color: var(--text-muted);
+	line-height: 1.5;
+}

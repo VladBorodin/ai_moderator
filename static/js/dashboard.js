@@ -13,6 +13,8 @@ const checksByDayChart = document.getElementById("checksByDayChart");
 
 const refreshDashboardButton = document.getElementById("refreshDashboardButton");
 
+const dashboardWarnings = document.getElementById("dashboardWarnings");
+
 refreshDashboardButton.addEventListener("click", loadDashboardStatistics);
 document.addEventListener("DOMContentLoaded", loadDashboardStatistics);
 
@@ -29,6 +31,7 @@ async function loadDashboardStatistics() {
 		renderSummary(statistics.summary);
 		renderActiveProvider(statistics.active_provider);
 		renderActivePrompt(statistics.active_prompt);
+		renderWarnings(statistics.warnings || []);
 		renderVerdictDistribution(statistics.verdict_distribution);
 		renderOffenseLevelDistribution(statistics.offense_level_distribution);
 		renderChecksByDay(statistics.checks_by_day);
@@ -179,6 +182,16 @@ function renderDashboardError(error) {
 	verdictDistributionChart.innerHTML = "";
 	offenseLevelChart.innerHTML = "";
 	checksByDayChart.innerHTML = "";
+
+	dashboardWarnings.innerHTML = `
+		<div class="warning-card danger">
+			<div class="warning-icon">!</div>
+			<div>
+				<strong>Ошибка загрузки Dashboard</strong>
+				<span>${escapeHtml(errorText)}</span>
+			</div>
+		</div>
+	`;
 }
 
 function getVerdictLabel(name) {
@@ -241,4 +254,51 @@ function escapeHtml(value) {
 		.replaceAll(">", "&gt;")
 		.replaceAll('"', "&quot;")
 		.replaceAll("'", "&#039;");
+}
+
+function renderWarnings(warnings) {
+	dashboardWarnings.innerHTML = "";
+
+	if (!Array.isArray(warnings) || warnings.length === 0) {
+		dashboardWarnings.innerHTML = `
+			<div class="warning-card success">
+				<div class="warning-icon">✓</div>
+				<div>
+					<strong>Критичных проблем не обнаружено</strong>
+					<span>Сервис не вернул активных предупреждений.</span>
+				</div>
+			</div>
+		`;
+		return;
+	}
+
+	for (const warning of warnings) {
+		const level = warning.level || "warning";
+		const icon = getWarningIcon(level);
+
+		const warningCard = document.createElement("div");
+		warningCard.className = `warning-card ${level}`;
+
+		warningCard.innerHTML = `
+			<div class="warning-icon">${escapeHtml(icon)}</div>
+			<div>
+				<strong>${escapeHtml(warning.title)}</strong>
+				<span>${escapeHtml(warning.description)}</span>
+			</div>
+		`;
+
+		dashboardWarnings.appendChild(warningCard);
+	}
+}
+
+function getWarningIcon(level) {
+	if (level === "success") {
+		return "✓";
+	}
+
+	if (level === "danger") {
+		return "!";
+	}
+
+	return "!";
 }

@@ -14,11 +14,20 @@ class DashboardStatisticsService:
 		self.db = db
 
 	def get_statistics(self, days: int = 14) -> dict[str, Any]:
+		summary = self._get_summary()
+		active_provider = self._get_active_provider_info()
+		active_prompt = self._get_active_prompt_info()
+
 		return {
-			"summary": self._get_summary(),
-			"active_provider": self._get_active_provider_info(),
-			"active_prompt": self._get_active_prompt_info(),
-			"verdict_distribution": self._get_verdict_distribution(),
+			"summary": summary,
+			"active_provider": active_provider,
+			"active_prompt": active_prompt,
+			"warnings": self._get_warnings(
+				summary=summary,
+				active_provider=active_provider,
+				active_prompt=active_prompt
+			),
+			"verdict_distribution": self._get_verdict_distribution(summary),
 			"offense_level_distribution": self._get_offense_level_distribution(),
 			"checks_by_day": self._get_checks_by_day(days)
 		}
@@ -90,21 +99,22 @@ class DashboardStatisticsService:
 			"length": len(prompt.prompt_text)
 		}
 
-	def _get_verdict_distribution(self) -> list[dict[str, int | str]]:
-		summary = self._get_summary()
-
+	def _get_verdict_distribution(
+		self,
+		summary: dict[str, int | float | None]
+	) -> list[dict[str, int | str]]:
 		return [
 			{
 				"name": "no_offensive",
-				"value": summary["non_offensive_checks"]
+				"value": int(summary["non_offensive_checks"] or 0)
 			},
 			{
 				"name": "offensive",
-				"value": summary["offensive_checks"]
+				"value": int(summary["offensive_checks"] or 0)
 			},
 			{
 				"name": "failed",
-				"value": summary["failed_checks"]
+				"value": int(summary["failed_checks"] or 0)
 			}
 		]
 
@@ -186,3 +196,64 @@ class DashboardStatisticsService:
 			)
 
 		return result
+	
+	def _get_warnings(
+		self,
+		summary: dict[str, int | float | None],
+		active_provider: dict[str, Any] | None,
+		active_prompt: dict[str, Any] | None
+	) -> list[dict[str, str]]:
+		warnings: list[dict[str, str]] = []
+
+		if active_provider is None:
+			warnings.append(
+				{
+					"level": "danger",
+					"title": "AI provider не настроен",
+					"description": "Активный AI provider отсутствует. Новые проверки не смогут обращаться к ИИ."
+				}
+			)
+
+		if active_prompt is None:
+			warnings.append(
+				{
+					"level": "danger",
+					"title": "Активный промт не настроен",
+					"description": "Активный prompt template отсутствует. Новые проверки не смогут сформировать системную инструкцию."
+				}
+			)
+
+		failed_checks = int(summary["failed_checks"] or 0)
+		total_checks = int(summary["total_checks"] or 0)
+
+		if failed_checks > 0:
+			warnings.append(
+				{
+					"level": "warning",
+					"title": "Есть ошибки проверок",
+					"description": f"В журнале найдено ошибок: {failed_checks}. Проверь системные логи и журнал проверок."
+				}
+			)
+
+		if total_checks >= 10:
+			error_rate = failed_checks / total_checks
+
+			if error_rate >= 0.2:
+				warnings.append(
+					{
+						"level": "danger",
+						"title": "Высокая доля ошибок",
+						"description": f"Доля ошибок составляет {round(error_rate * 100, 1)}%. Возможна проблема с AI provider или настройками."
+					}
+				)
+
+		if not warnings:
+			warnings.append(
+				{
+					"level": "success",
+					"title": "Критичных проблем не обнаружено",
+					"description": "Активные настройки найдены. Ошибки можно отслеживать в журнале и системных логах."
+				}
+			)
+
+		return warnings
