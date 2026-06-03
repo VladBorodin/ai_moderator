@@ -7,7 +7,7 @@ from app.core.logging_config import APP_LOG_FILE, ERROR_LOG_FILE
 
 
 router = APIRouter(
-	prefix="/system-logs",
+	prefix="/api/system-logs",
 	tags=["System Logs"]
 )
 

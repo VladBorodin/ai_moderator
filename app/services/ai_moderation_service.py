@@ -34,7 +34,9 @@ class AiModerationService:
 		self,
 		request_data: ModerationCheckRequestDto,
 		provider: AiProviderSetting,
-		prompt_template: PromptTemplate
+		prompt_template: PromptTemplate,
+		temperature: float,
+		max_tokens: int
 	) -> ModerationResultDto:
 		user_prompt = self._build_user_prompt(request_data)
 
@@ -50,7 +52,8 @@ class AiModerationService:
 					"content": user_prompt
 				}
 			],
-			"temperature": 0.1
+			"temperature": temperature,
+			"max_tokens": max_tokens
 		}
 
 		headers = {
@@ -79,15 +82,38 @@ class AiModerationService:
 
 			raise AiProviderRequestError("AI provider request timeout.") from error
 		except requests.exceptions.RequestException as error:
+			status_code = None
+			response_text = None
+
+			if error.response is not None:
+				status_code = error.response.status_code
+				response_text = error.response.text[:2000]
+
 			logger.exception(
-				"AI provider request failed. provider_id=%s provider_url=%s",
+				"AI provider request failed. provider_id=%s provider_url=%s status_code=%s response_text=%s",
 				provider.id,
-				provider.provider_url
+				provider.provider_url,
+				status_code,
+				response_text
 			)
+
+			if status_code is not None:
+				raise AiProviderRequestError(
+					f"AI provider request failed. status_code={status_code}."
+				) from error
 
 			raise AiProviderRequestError("AI provider request failed.") from error
 
-		response_json = response.json()
+		try:
+			response_json = response.json()
+		except ValueError as error:
+			logger.exception(
+				"AI provider returned non-JSON HTTP response. provider_id=%s",
+				provider.id
+			)
+
+			raise AiResponseParseError("AI provider returned non-JSON HTTP response.") from error
+
 		answer_text = self._extract_answer_text(response_json)
 
 		return self._parse_moderation_result(answer_text)

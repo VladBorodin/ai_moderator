@@ -10,10 +10,11 @@ from app.schemas.moderation import (
 	ModerationCheckResponseDto,
 	ModerationLogDto
 )
-from app.services.ai_moderation_service import AiModerationService, AiModerationError
+from app.services.ai_moderation_service import AiModerationError, AiModerationService
 from app.services.ai_provider_setting_service import AiProviderSettingService
 from app.services.moderation_log_service import ModerationLogService
 from app.services.prompt_template_service import PromptTemplateService
+from app.services.system_setting_service import SystemSettingService
 
 
 logger = logging.getLogger(__name__)
@@ -52,6 +53,7 @@ def check_message(
 	try:
 		ai_provider_setting_service = AiProviderSettingService(db)
 		prompt_template_service = PromptTemplateService(db)
+		system_setting_service = SystemSettingService(db)
 
 		active_provider = ai_provider_setting_service.get_active()
 
@@ -63,12 +65,24 @@ def check_message(
 		if active_prompt_template is None:
 			raise RuntimeError("Active prompt template is not configured.")
 
+		temperature = system_setting_service.get_float(
+			code="ai.temperature",
+			default_value=0.1
+		)
+
+		max_tokens = system_setting_service.get_int(
+			code="ai.max_tokens",
+			default_value=512
+		)
+
 		ai_moderation_service = AiModerationService()
 
 		result = ai_moderation_service.moderate(
 			request_data=request_data,
 			provider=active_provider,
-			prompt_template=active_prompt_template
+			prompt_template=active_prompt_template,
+			temperature=temperature,
+			max_tokens=max_tokens
 		)
 
 		processing_time_ms = int((perf_counter() - start_time) * 1000)

@@ -14,7 +14,7 @@ async function loadSystemLogs() {
 	const lines = Number(linesCount.value || 200);
 
 	try {
-		const response = await fetch(`/system-logs?lines=${lines}`);
+		const response = await fetch(`/api/system-logs?lines=${lines}`);
 		const responseBody = await response.json();
 
 		if (!response.ok) {
@@ -40,7 +40,11 @@ function renderLogs(logs) {
 }
 
 function showLogError(error) {
-	appLogContent.textContent = `Ошибка загрузки логов: ${JSON.stringify(error, null, 2)}`;
+	const errorText = error instanceof Error
+		? error.message
+		: JSON.stringify(error, null, 2);
+
+	appLogContent.textContent = `Ошибка загрузки логов: ${errorText}`;
 	errorLogContent.textContent = "";
 	appLogLinesCount.textContent = "error";
 	errorLogLinesCount.textContent = "error";
