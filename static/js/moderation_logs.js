@@ -41,7 +41,8 @@ async function loadLogs(forceRender) {
 		currentFirstLogId = firstLogId;
 		hideNewLogsBadge();
 		renderLogs(logs);
-
+		
+		hasOpenDetails = false;
 		secondsUntilRefresh = refreshIntervalSeconds;
 		logsRefreshText.textContent = `Автообновление через ${refreshIntervalSeconds} сек.`;
 	} catch (error) {
@@ -211,6 +212,7 @@ function escapeHtml(value) {
 }
 
 refreshLogsButton.addEventListener("click", async () => {
+	hasOpenDetails = false;
 	await loadLogs(true);
 });
 
@@ -223,6 +225,7 @@ function startLogsRefreshTimer() {
 	setInterval(async () => {
 		if (!autoRefreshLogsCheckbox.checked) {
 			logsRefreshText.textContent = "Автообновление выключено.";
+			await checkForNewLogs();
 			return;
 		}
 
@@ -270,3 +273,20 @@ function showNewLogsBadge() {
 function hideNewLogsBadge() {
 	newLogsBadge.classList.add("hidden");
 }
+
+autoRefreshLogsCheckbox.addEventListener("change", async () => {
+	secondsUntilRefresh = refreshIntervalSeconds;
+
+	if (autoRefreshLogsCheckbox.checked) {
+		logsRefreshText.textContent = `Автообновление через ${refreshIntervalSeconds} сек.`;
+
+		if (!hasOpenDetails) {
+			await loadLogs(false);
+		}
+
+		return;
+	}
+
+	logsRefreshText.textContent = "Автообновление выключено.";
+	await checkForNewLogs();
+});
