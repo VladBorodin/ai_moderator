@@ -3,11 +3,20 @@ const logsEmptyState = document.getElementById("logsEmptyState");
 const logsTableWrap = document.getElementById("logsTableWrap");
 const logsTableBody = document.getElementById("logsTableBody");
 
+const autoRefreshLogsCheckbox = document.getElementById("autoRefreshLogsCheckbox");
+const logsRefreshText = document.getElementById("logsRefreshText");
+const newLogsBadge = document.getElementById("newLogsBadge");
+
+let refreshIntervalSeconds = 15;
+let secondsUntilRefresh = refreshIntervalSeconds;
+let currentFirstLogId = null;
+let hasOpenDetails = false;
+
 refreshLogsButton.addEventListener("click", loadLogs);
 
 document.addEventListener("DOMContentLoaded", loadLogs);
 
-async function loadLogs() {
+async function loadLogs(forceRender) {
 	try {
 		const response = await fetch("/moderation/logs?limit=50&offset=0");
 		const logs = await response.json();
@@ -22,7 +31,19 @@ async function loadLogs() {
 			return;
 		}
 
+		const firstLogId = logs[0]?.id ?? null;
+
+		if (!forceRender && hasOpenDetails && firstLogId !== currentFirstLogId) {
+			showNewLogsBadge();
+			return;
+		}
+
+		currentFirstLogId = firstLogId;
+		hideNewLogsBadge();
 		renderLogs(logs);
+
+		secondsUntilRefresh = refreshIntervalSeconds;
+		logsRefreshText.textContent = `Автообновление через ${refreshIntervalSeconds} сек.`;
 	} catch (error) {
 		showEmptyLogs();
 	}
@@ -140,6 +161,8 @@ function toggleDetails(detailsRowId, button) {
 		detailsRow.classList.add("hidden");
 		button.textContent = "Детали";
 	}
+
+	hasOpenDetails = Boolean(document.querySelector(".details-row:not(.hidden)"));
 }
 
 function showEmptyLogs() {
@@ -185,4 +208,65 @@ function escapeHtml(value) {
 		.replaceAll(">", "&gt;")
 		.replaceAll('"', "&quot;")
 		.replaceAll("'", "&#039;");
+}
+
+refreshLogsButton.addEventListener("click", async () => {
+	await loadLogs(true);
+});
+
+document.addEventListener("DOMContentLoaded", async () => {
+	await loadLogs(true);
+	startLogsRefreshTimer();
+});
+
+function startLogsRefreshTimer() {
+	setInterval(async () => {
+		if (!autoRefreshLogsCheckbox.checked) {
+			logsRefreshText.textContent = "Автообновление выключено.";
+			return;
+		}
+
+		if (hasOpenDetails) {
+			logsRefreshText.textContent = "Автообновление на паузе: открыты детали.";
+			await checkForNewLogs();
+			return;
+		}
+
+		secondsUntilRefresh -= 1;
+
+		if (secondsUntilRefresh <= 0) {
+			await loadLogs(false);
+			secondsUntilRefresh = refreshIntervalSeconds;
+			return;
+		}
+
+		logsRefreshText.textContent = `Автообновление через ${secondsUntilRefresh} сек.`;
+	}, 1000);
+}
+
+async function checkForNewLogs() {
+	try {
+		const response = await fetch("/moderation/logs?limit=1&offset=0");
+		const logs = await response.json();
+
+		if (!response.ok || !Array.isArray(logs) || logs.length === 0) {
+			return;
+		}
+
+		const firstLogId = logs[0]?.id ?? null;
+
+		if (currentFirstLogId && firstLogId && firstLogId !== currentFirstLogId) {
+			showNewLogsBadge();
+		}
+	} catch {
+		// Не шумим: это фоновая проверка.
+	}
+}
+
+function showNewLogsBadge() {
+	newLogsBadge.classList.remove("hidden");
+}
+
+function hideNewLogsBadge() {
+	newLogsBadge.classList.add("hidden");
 }

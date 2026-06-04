@@ -1640,3 +1640,43 @@ select:focus {
 		grid-template-columns: 1fr;
 	}
 }
+
+.logs-toolbar-actions {
+	display: flex;
+	align-items: center;
+	justify-content: flex-end;
+	gap: 14px;
+	flex-wrap: wrap;
+}
+
+.refresh-status {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	color: var(--text-muted);
+	font-size: 13px;
+	font-weight: 750;
+}
+
+.new-logs-badge {
+	display: inline-flex;
+	align-items: center;
+	min-height: 28px;
+	padding: 0 10px;
+	border-radius: 999px;
+	color: #fde68a;
+	background: rgba(245, 158, 11, 0.16);
+	font-size: 12px;
+	font-weight: 850;
+}
+
+.compact-checkbox {
+	margin: 0;
+	padding: 0;
+	color: var(--text-soft);
+	white-space: nowrap;
+}
+
+.compact-checkbox input {
+	width: auto;
+}

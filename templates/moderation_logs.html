@@ -4,11 +4,23 @@
 <div class="card">
 	<div class="card-header card-header-row">
 		<div>
-			<h3>Журнал проверок</h3>
-			<p>Последние запросы к `/moderation/check`.</p>
+			<h3>Последние проверки</h3>
+			<p>Запросы, обработанные endpoint `/moderation/check`.</p>
 		</div>
 
-		<button class="secondary-button" id="refreshLogsButton">Обновить</button>
+		<div class="logs-toolbar-actions">
+			<div id="logsRefreshStatus" class="refresh-status">
+				<span id="logsRefreshText">Автообновление через 15 сек.</span>
+				<span id="newLogsBadge" class="new-logs-badge hidden">Есть новые записи</span>
+			</div>
+
+			<label class="checkbox-row compact-checkbox">
+				<input id="autoRefreshLogsCheckbox" type="checkbox" checked>
+				<span>Автообновление</span>
+			</label>
+
+			<button class="secondary-button" id="refreshLogsButton">Обновить</button>
+		</div>
 	</div>
 
 	<div id="logsEmptyState" class="empty-state">
