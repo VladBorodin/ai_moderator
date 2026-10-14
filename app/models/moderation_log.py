@@ -14,6 +14,8 @@ class ModerationLog(Base):
 
 	id: Mapped[UUID] = mapped_column(PostgresUUID(as_uuid=True), primary_key=True, default=uuid4, index=True)
 
+	status: Mapped[str] = mapped_column(String(30), default="processing", index=True, nullable=False)
+
 	source_system: Mapped[str | None] = mapped_column(String(100), index=True, nullable=True)
 	chat_id: Mapped[str | None] = mapped_column(String(100), index=True, nullable=True)
 	user_id: Mapped[str | None] = mapped_column(String(100), index=True, nullable=True)
@@ -30,6 +32,13 @@ class ModerationLog(Base):
 	description: Mapped[str | None] = mapped_column(Text, nullable=True)
 
 	processing_time_ms: Mapped[int | None] = mapped_column(Integer, nullable=True)
+	retry_count: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
 	error_text: Mapped[str | None] = mapped_column(Text, nullable=True)
 
+	queued_on: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+	processing_started_on: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+	completed_on: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+	failed_on: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+
 	created_on: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=get_utc_now, nullable=False)
+	modified_on: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=get_utc_now, onupdate=get_utc_now, nullable=False)

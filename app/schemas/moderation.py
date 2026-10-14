@@ -1,13 +1,15 @@
 from datetime import datetime
-from typing import Any
+from typing import Any, Literal
 from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field
 
 
+ModerationRequestStatus = Literal["queued", "processing", "completed", "failed"]
+
 class ChatMessageDto(BaseModel):
-	name: str | None = None
-	text: str
+	name: str | None = Field(default=None, max_length=100)
+	text: str = Field(min_length=1, max_length=2000)
 
 
 class ModerationCheckRequestDto(BaseModel):
@@ -16,7 +18,7 @@ class ModerationCheckRequestDto(BaseModel):
 	user_id: str | None = None
 	user_name: str | None = None
 	external_message_id: str | None = None
-	messages: list[ChatMessageDto]
+	messages: list[ChatMessageDto] = Field(min_length=1, max_length=10)
 
 
 class ModerationResultDto(BaseModel):
@@ -30,6 +32,24 @@ class ModerationCheckResponseDto(BaseModel):
 	user_id: str | None = None
 	result: ModerationResultDto
 
+class ModerationAsyncCheckResponseDto(BaseModel):
+	request_id: UUID
+	status: ModerationRequestStatus
+
+
+class ModerationAsyncResultDto(BaseModel):
+	request_id: UUID
+	status: ModerationRequestStatus
+	chat_id: str | None = None
+	user_id: str | None = None
+	result: ModerationResultDto | None = None
+	error_text: str | None = None
+	created_on: datetime
+	modified_on: datetime
+	queued_on: datetime | None = None
+	processing_started_on: datetime | None = None
+	completed_on: datetime | None = None
+	failed_on: datetime | None = None
 
 class ModerationLogDto(BaseModel):
 	model_config = ConfigDict(from_attributes=True)
@@ -52,5 +72,11 @@ class ModerationLogDto(BaseModel):
 	description: str | None = None
 
 	processing_time_ms: int | None = None
+	retry_count: int
 	error_text: str | None = None
+	queued_on: datetime | None = None
+	processing_started_on: datetime | None = None
+	completed_on: datetime | None = None
+	failed_on: datetime | None = None
 	created_on: datetime
+	modified_on: datetime
